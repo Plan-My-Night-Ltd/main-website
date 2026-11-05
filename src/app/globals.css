@@ -1,26 +1,75 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Design tokens. Monochrome, after nightkey.co.uk: true black, white, bone for light
+   sections, greys for secondary text and hairlines. No accent colour; photography
+   carries the mood. */
+@theme {
+  --color-bone: #f5f5f3;
+  --color-stone: #d9d9d9;
+  --color-ash: #8f8f8f; /* secondary text on black */
+  --color-ash-deep: #6b6b6b; /* secondary text on bone/white */
+  --color-line: #262626; /* hairlines on black */
+  --color-raised: #121212; /* panels on black */
+  --color-danger: #ff8f80;
+
+  --font-sans: var(--font-jost), "Futura", system-ui, sans-serif;
+
+  --text-display: clamp(2.6rem, 1.7rem + 4vw, 5.25rem);
+  --text-display--line-height: 1.04;
+  --text-display--letter-spacing: -0.015em;
+  --text-title: clamp(1.9rem, 1.45rem + 1.9vw, 3rem);
+  --text-title--line-height: 1.12;
+  --text-title--letter-spacing: -0.01em;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 4px;
+}
+
+::selection {
+  background: #fff;
+  color: #000;
+}
+
+/* All photography is shown in black and white so photos from different sources sit together. */
+.photo {
+  filter: grayscale(1) contrast(1.08) brightness(0.92);
+}
+
+summary::-webkit-details-marker {
+  display: none;
+}
+summary {
+  list-style: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Sliders scroll by swipe or arrow buttons; the native scrollbar is hidden. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
