@@ -7,7 +7,7 @@ import { longDate, venueTypeLabel } from "@/lib/format";
 import type { Answers } from "@/lib/plan/answers";
 import { shapeLabel, whereLabel } from "@/lib/plan/describe";
 import { serverSupabase } from "@/lib/supabase/server";
-import { getArea, getVenue } from "@/lib/venues";
+import { getArea, getVenuesBySlugs } from "@/lib/venues";
 
 export const metadata: Metadata = {
   title: "Your account",
@@ -37,6 +37,7 @@ export default async function AccountPage() {
     supabase.from("visits").select("venue_slug, visited_on").order("visited_on", { ascending: false }).returns<Visit[]>(),
   ]);
 
+  const visitedVenues = new Map((await getVenuesBySlugs((visits ?? []).map((v) => v.venue_slug))).map((v) => [v.slug, v]));
   const today = londonToday();
   const upcoming = (plans ?? []).filter((p) => p.night_date >= today).reverse();
   const past = (plans ?? []).filter((p) => p.night_date < today);
@@ -89,7 +90,7 @@ export default async function AccountPage() {
         ) : (
           <ul className="mt-8 divide-y divide-line border-y border-line">
             {visits!.map((v) => {
-              const venue = getVenue(v.venue_slug);
+              const venue = visitedVenues.get(v.venue_slug);
               return (
                 <li key={v.venue_slug}>
                   <Link

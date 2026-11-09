@@ -8,28 +8,31 @@ import { VenueFacts } from "@/components/venue-facts";
 import { launchAreaSlugs, regionLabel } from "@/lib/data/areas";
 import { buildPlan } from "@/lib/plan/build";
 import { photo } from "@/lib/photos";
-import { getArea, getVenue, listAreas, listVenues, venuesInArea } from "@/lib/venues";
+import type { Answers } from "@/lib/plan/answers";
+import { getArea, listAreas, planCandidates, venueCountsByArea } from "@/lib/venues";
 
 const SATURDAY = 5;
 
-export default function Home() {
+export const revalidate = 3600;
+
+const exampleAnswers: Answers = {
+  date: "2026-11-07",
+  start: "19:30",
+  stops: ["dinner", "drinks", "club"],
+  group: "friends",
+  partySize: 4,
+  area: "soho",
+  budget: 2,
+  vibes: ["buzzy"],
+  music: "house-techno",
+};
+
+export default async function Home() {
   // A real plan from the engine, so the example always matches what guests get.
-  const example = buildPlan(
-    {
-      date: "2026-11-07",
-      start: "19:30",
-      stops: ["dinner", "drinks", "club"],
-      group: "friends",
-      partySize: 4,
-      area: "soho",
-      budget: 2,
-      vibes: ["buzzy"],
-      music: "house-techno",
-    },
-    listVenues(),
-    listAreas(),
-  );
-  const factsVenue = getVenue("basement-forty");
+  const [candidates, counts] = await Promise.all([planCandidates(exampleAnswers), venueCountsByArea()]);
+  const example = buildPlan(exampleAnswers, candidates, listAreas());
+  // The door-policy example needs a venue we've checked; the section is hidden until there is one.
+  const factsVenue = example.stops.map((s) => s.venue).find((v) => v?.verified && v.dressCode && v.doorPolicy);
   const hero = photo("hero-street");
   const allAreas = listAreas();
   const orderedAreas = [
@@ -99,7 +102,7 @@ export default function Home() {
           }
         >
           {orderedAreas.map((area) => {
-            const count = venuesInArea(area.slug).length;
+            const count = counts.get(area.slug) ?? 0;
             return (
               <li key={area.slug} className="w-[68vw] shrink-0 snap-start sm:w-[38vw] lg:w-[23vw] xl:w-[18.5rem]">
                 <AreaTile

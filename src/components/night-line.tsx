@@ -74,7 +74,8 @@ export function NightLine({ stops, tone = "onBlack", size = "full", renderDetail
                       </Link>
                     </h3>
                     <p className={`mt-1 text-sm ${c.muted}`}>
-                      {getArea(s.venue.areaSlug)?.name}, near {s.venue.nearestTube}
+                      {getArea(s.venue.areaSlug)?.name}
+                      {s.venue.nearestTube && <>, near {s.venue.nearestTube}</>}
                     </p>
                     {renderDetails?.(s)}
                   </>

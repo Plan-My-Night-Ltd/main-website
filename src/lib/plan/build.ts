@@ -2,16 +2,17 @@ import { friendlyTime, clock, toMinutes, weekdayOf } from "@/lib/format";
 import { groupOptions, stopOrder, vibeOptions, type Answers, type Stop } from "@/lib/plan/answers";
 import type { Area, Venue, VenueType } from "@/lib/types";
 
-// Local version of the /api/plan matching engine: hard filters, tag scoring,
-// then itinerary timing. Claude reranking and Foursquare fill slot in later.
+// The matching engine: hard filters, tag scoring, then itinerary timing. Runs on
+// the shortlist from planCandidates() in venues.ts. Claude reranking slots in later.
 
-const stopVenueType: Record<Stop, VenueType> = { dinner: "restaurant", drinks: "bar", club: "club" };
+export const stopVenueType: Record<Stop, VenueType> = { dinner: "restaurant", drinks: "bar", club: "club" };
 
 // How long each stop usually lasts, and the minimum time a venue must stay open after arrival.
 const stay: Record<Stop, number> = { dinner: 120, drinks: 105, club: 180 };
 const minOpenAfterArrival: Record<Stop, number> = { dinner: 90, drinks: 60, club: 90 };
 const clubsFillFrom = toMinutes("22:30");
-const maxHopKm = 3;
+export const maxHopKm = 3;
+export const areaRadiusKm = 1.8;
 const alternativesShown = 3;
 
 export type Travel = { mode: "walk" | "ride"; minutes: number; km: number };
@@ -69,7 +70,7 @@ function inChosenArea(venue: Venue, answers: Answers, areas: Area[]): boolean {
   }
   if (venue.areaSlug === answers.area) return true;
   const centre = areas.find((a) => a.slug === answers.area);
-  return centre ? distanceKm(venue, centre) <= 1.8 : false;
+  return centre ? distanceKm(venue, centre) <= areaRadiusKm : false;
 }
 
 function score(venue: Venue, stop: Stop, answers: Answers, prev: Venue | null): number {
@@ -83,6 +84,8 @@ function score(venue: Venue, stop: Stop, answers: Answers, prev: Venue | null): 
   }
   if (venue.priceBand === answers.budget) s += 3;
   if (venue.areaSlug === answers.area) s += 3;
+  if (venue.verified) s += 2;
+  if (venue.rating !== undefined) s += 1.5 * (venue.rating - 7.5);
   if (prev) s -= 1.5 * distanceKm(prev, venue);
   return s;
 }
@@ -97,6 +100,7 @@ function reasonFor(venue: Venue, stop: Stop, answers: Answers, closes: number, t
   if (stop !== "dinner" && answers.music !== "any" && venue.musicTags.includes(answers.music)) {
     parts.push("plays what you asked for");
   }
+  if (venue.rating !== undefined && venue.rating >= 8.5) parts.push(`rated ${venue.rating.toFixed(1)} out of 10 on Foursquare`);
   if (travel) parts.push(travel.mode === "walk" ? `${travel.minutes} minutes' walk from your last stop` : "a short ride from your last stop");
   parts.push(`open until ${friendlyTime(clock(closes))}`);
   return capitalise(parts.join(", ")) + ".";
@@ -121,7 +125,7 @@ export function buildPlan(answers: Answers, venues: Venue[], areas: Area[]): Pla
 
     const ranked = venues
       .filter((v) => v.type === stopVenueType[stop])
-      .filter((v) => Math.abs(v.priceBand - answers.budget) <= 1)
+      .filter((v) => v.priceBand === undefined || Math.abs(v.priceBand - answers.budget) <= 1)
       .filter((v) => inChosenArea(v, answers, areas) || (prev !== null && distanceKm(prev, v) <= maxHopKm))
       .map((v) => {
         const travel: Travel | undefined = prev ? estimateTravel(prev, v) : undefined;

@@ -33,6 +33,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Candlelit trattoria with fresh pasta rolled in the window. The counter seats are the best in the house for two.",
     source: "curated",
+    verified: true,
     hours: [...hours([MON, TUE, WED, THU, FRI, SAT], "12:00", "23:30"), ...hours([SUN], "12:00", "22:00")],
   },
   {
@@ -55,6 +56,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Open-fire grill with a loud dining room and a long wine list. Good for groups who want the night to start properly.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "17:30", "23:00"),
   },
   {
@@ -75,6 +77,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Low-lit basement with a trio on most nights and martinis served cold enough to hurt. Sets start at 9pm.",
     source: "curated",
+    verified: true,
     hours: hours([TUE, WED, THU, FRI, SAT], "18:00", "02:00"),
   },
   {
@@ -96,6 +99,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Two floors of cocktails and a DJ playing everything you know the words to. Gets busy fast on Fridays.",
     source: "curated",
+    verified: true,
     hours: [...hours([MON, TUE, WED, THU, SUN], "17:00", "01:00"), ...hours([FRI, SAT], "17:00", "03:00")],
   },
   {
@@ -117,6 +121,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Sweaty, low-ceilinged room with a proper sound system. Resident DJs play house until close.",
     source: "curated",
+    verified: true,
     hours: hours([THU, FRI, SAT], "22:00", "03:30"),
   },
 
@@ -141,6 +146,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Wood-panelled French dining room with tableside service. The kind of place to mark an anniversary.",
     source: "curated",
+    verified: true,
     hours: hours([TUE, WED, THU, FRI, SAT], "18:00", "23:00"),
   },
   {
@@ -163,6 +169,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Robata grill and a sushi counter, with a DJ from 9pm that turns dinner into the start of the party.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "18:00", "00:00"),
   },
   {
@@ -184,6 +191,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Grand hotel bar with a pianist, leather booths and a cocktail list that goes back a century.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "16:00", "01:00"),
   },
   {
@@ -205,6 +213,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Velvet booths, bottle service and a hip-hop and R&B soundtrack. Mixed groups get in more easily.",
     source: "curated",
+    verified: true,
     hours: hours([WED, THU, FRI, SAT], "23:00", "03:00"),
   },
 
@@ -229,6 +238,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Theatreland institution with red banquettes and a pie that has been on the menu for decades.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "12:00", "23:00"),
   },
   {
@@ -250,6 +260,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Small plates built for sharing, flatbreads straight from the oven, and a terrace on warm nights.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "12:00", "22:30"),
   },
   {
@@ -271,6 +282,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Speakeasy behind an unmarked stage door. Twenty seats, a short menu, and bartenders who will make you something off it.",
     source: "curated",
+    verified: true,
     hours: hours([MON, TUE, WED, THU, FRI, SAT], "17:00", "01:00"),
   },
   {
@@ -291,6 +303,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Vaulted cellar club playing 2000s pop and floor-fillers. Unpretentious, loud, and full by midnight.",
     source: "curated",
+    verified: true,
     hours: hours([THU, FRI, SAT], "22:00", "03:00"),
   },
 
@@ -315,6 +328,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Everything cooked over wood in an open kitchen, with natural wines by the glass and a soundtrack worth asking about.",
     source: "curated",
+    verified: true,
     hours: [...hours([TUE, WED, THU, SUN], "17:30", "23:00"), ...hours([FRI, SAT], "17:30", "00:00")],
   },
   {
@@ -336,6 +350,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Family-run curry house that has fed Brick Lane for thirty years. Cheap, generous, and open late.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "12:00", "00:30"),
   },
   {
@@ -356,6 +371,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Natural wine bar with a record player behind the counter and bar snacks that out-do most restaurants.",
     source: "curated",
+    verified: true,
     hours: hours([TUE, WED, THU, FRI, SAT], "17:00", "00:00"),
   },
   {
@@ -377,6 +393,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Heated rooftop terrace with views across the City towers and DJs from Thursday to Saturday.",
     source: "curated",
+    verified: true,
     hours: [...hours([MON, TUE, WED, SUN], "16:00", "00:00"), ...hours([THU, FRI, SAT], "16:00", "02:00")],
   },
   {
@@ -398,6 +415,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Warehouse club under the railway arches with touring DJs and a no-phones policy on the dancefloor.",
     source: "curated",
+    verified: true,
     hours: [...hours([THU], "22:00", "03:00"), ...hours([FRI, SAT], "22:00", "05:00")],
   },
   {
@@ -419,6 +437,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Hip-hop, R&B and Afrobeats across two rooms. Friendly door, busy bar, packed from midnight.",
     source: "curated",
+    verified: true,
     hours: hours([THU, FRI, SAT], "22:00", "04:00"),
   },
 
@@ -443,6 +462,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Tasting menus with the whole river laid out below you, from St Paul's to the Houses of Parliament.",
     source: "curated",
+    verified: true,
     hours: hours([TUE, WED, THU, FRI, SAT, SUN], "18:00", "23:30"),
   },
   {
@@ -465,6 +485,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Oysters, fish of the day and a terrace on the river path. Easy, unfussy, and very good value for the view.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "12:00", "22:30"),
   },
   {
@@ -486,6 +507,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Cocktail lounge looking straight across the river at Big Ben. Live piano on Friday and Saturday.",
     source: "curated",
+    verified: true,
     hours: hours(ALL, "16:00", "01:00"),
   },
   {
@@ -506,6 +528,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Craft beer and cheap cocktails under the Waterloo railway, with ping-pong tables at the back.",
     source: "curated",
+    verified: true,
     hours: [...hours([MON, TUE, WED, THU, SUN], "16:00", "23:30"), ...hours([FRI, SAT], "16:00", "02:00")],
   },
   {
@@ -527,6 +550,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Graffiti tunnel entrance, brick vaults inside and a techno line-up that runs until morning.",
     source: "curated",
+    verified: true,
     hours: hours([FRI, SAT], "22:00", "04:00"),
   },
 
@@ -551,6 +575,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Candlelit tapas and sherry on one of London's best restaurant streets.",
     source: "curated",
+    verified: true,
     hours: hours([MON, TUE, WED, THU, FRI, SAT], "17:30", "23:00"),
   },
   {
@@ -572,6 +597,7 @@ export const sampleVenues: Venue[] = [
     description:
       "Twelve seats, low music, and a whisky list longer than the menu. Made for conversation.",
     source: "curated",
+    verified: true,
     hours: hours([TUE, WED, THU, FRI, SAT], "17:00", "00:00"),
   },
 ];

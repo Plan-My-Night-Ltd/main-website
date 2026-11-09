@@ -19,6 +19,8 @@ export type OpeningPeriod = {
   closes: string; // "HH:MM"; earlier than opens means after midnight
 };
 
+// Imported venues only have what Foursquare knows; the optional fields marked
+// "checked" are filled in when a venue is checked by hand (`verified`).
 export type Venue = {
   slug: string;
   name: string;
@@ -27,16 +29,18 @@ export type Venue = {
   address: string;
   lat: number;
   lng: number;
-  nearestTube: string;
-  priceBand: 1 | 2 | 3 | 4;
-  pricePerHeadGbp: number;
-  vibeTags: string[];
+  nearestTube?: string;
+  priceBand?: 1 | 2 | 3 | 4;
+  pricePerHeadGbp?: number; // checked
+  vibeTags: string[]; // hand-set and inferred tags together
   musicTags: string[];
   cuisine?: string;
-  dressCode: string;
-  doorPolicy: string;
+  dressCode?: string; // checked
+  doorPolicy?: string; // checked
   bookingUrl?: string;
   description: string;
+  rating?: number; // Foursquare, 0 to 10
+  verified: boolean;
   source: "curated" | "foursquare";
   hours: OpeningPeriod[];
 };

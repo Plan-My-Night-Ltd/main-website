@@ -1,15 +1,18 @@
 import type { Metadata } from "next";
 import { AreaTile } from "@/components/area-tile";
 import { regionLabel } from "@/lib/data/areas";
-import { listAreas, venuesInArea } from "@/lib/venues";
+import { listAreas, venueCountsByArea } from "@/lib/venues";
 
 export const metadata: Metadata = {
   title: "London neighbourhoods for a night out",
   description: "Where to eat, drink and dance across London, neighbourhood by neighbourhood.",
 };
 
-export default function AreasPage() {
+export const revalidate = 3600;
+
+export default async function AreasPage() {
   const areas = listAreas();
+  const counts = await venueCountsByArea();
   return (
     <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-8 sm:pt-24">
       <h1 className="max-w-3xl text-display font-light">London, neighbourhood by neighbourhood</h1>
@@ -22,7 +25,7 @@ export default function AreasPage() {
             {areas
               .filter((a) => a.region === region)
               .map((a) => {
-                const count = venuesInArea(a.slug).length;
+                const count = counts.get(a.slug) ?? 0;
                 return (
                   <li key={a.slug}>
                     <AreaTile

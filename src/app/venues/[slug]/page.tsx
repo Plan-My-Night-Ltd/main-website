@@ -7,33 +7,42 @@ import { VenueFacts } from "@/components/venue-facts";
 import { VisitedToggle } from "@/components/visited-toggle";
 import { hoursLine, venueTypeLabel, weekdayNames } from "@/lib/format";
 import { photo } from "@/lib/photos";
-import { getArea, getVenue, listVenues, usingSampleData, venuesInArea } from "@/lib/venues";
+import { getArea, getVenue, usingSampleData, venuesInArea } from "@/lib/venues";
 
-export const dynamicParams = false;
+// There are thousands of venues, so each page is built on its first visit and
+// then cached, rather than all at build time.
+export const revalidate = 3600;
 
 export function generateStaticParams() {
-  return listVenues().map((v) => ({ slug: v.slug }));
+  return [];
 }
 
 export async function generateMetadata(props: PageProps<"/venues/[slug]">): Promise<Metadata> {
   const { slug } = await props.params;
-  const venue = getVenue(slug);
+  const venue = await getVenue(slug);
   if (!venue) return {};
   const area = getArea(venue.areaSlug);
   const title = `${venue.name}, ${area?.name}`;
+  const description = [
+    venue.description,
+    venue.nearestTube && `Nearest Tube: ${venue.nearestTube}.`,
+    venue.dressCode && `Dress code: ${venue.dressCode}.`,
+  ]
+    .filter(Boolean)
+    .join(" ");
   return {
     title,
-    description: `${venue.description} Nearest Tube: ${venue.nearestTube}. Dress code: ${venue.dressCode}.`,
+    description,
     openGraph: { title, description: venue.description, type: "website" },
   };
 }
 
 export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
   const { slug } = await props.params;
-  const venue = getVenue(slug);
+  const venue = await getVenue(slug);
   if (!venue) notFound();
   const area = getArea(venue.areaSlug)!;
-  const nearby = venuesInArea(area.slug).filter((v) => v.slug !== venue.slug);
+  const nearby = (await venuesInArea(area.slug, 4)).filter((v) => v.slug !== venue.slug);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${venue.lat},${venue.lng}`;
 
   return (
@@ -82,21 +91,25 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
             <h2 id="hours" className="mb-4 text-sm text-ash">
               Opening hours
             </h2>
-            <table className="w-full text-[0.9375rem]">
-              <tbody className="divide-y divide-line border-y border-line">
-                {weekdayNames.map((day, i) => {
-                  const line = hoursLine(venue.hours, i);
-                  return (
-                    <tr key={day}>
-                      <th scope="row" className="py-3 text-left font-normal text-ash">
-                        {day}
-                      </th>
-                      <td className={`py-3 text-right ${line === "Closed" ? "text-ash" : ""}`}>{line}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+            {venue.hours.length === 0 ? (
+              <p className="text-ash">Opening hours aren&apos;t listed yet.</p>
+            ) : (
+              <table className="w-full text-[0.9375rem]">
+                <tbody className="divide-y divide-line border-y border-line">
+                  {weekdayNames.map((day, i) => {
+                    const line = hoursLine(venue.hours, i);
+                    return (
+                      <tr key={day}>
+                        <th scope="row" className="py-3 text-left font-normal text-ash">
+                          {day}
+                        </th>
+                        <td className={`py-3 text-right ${line === "Closed" ? "text-ash" : ""}`}>{line}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
 
             <h2 className="mt-12 mb-2 text-sm text-ash">Address</h2>
             <address className="not-italic">{venue.address}</address>
@@ -109,7 +122,16 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
               Open in Google Maps
             </a>
 
-            {usingSampleData && <p className="mt-12 text-sm text-ash">This is a sample venue used to preview the site.</p>}
+            {usingSampleData ? (
+              <p className="mt-12 text-sm text-ash">This is a sample venue used to preview the site.</p>
+            ) : (
+              !venue.verified && (
+                <p className="mt-12 text-sm text-ash">
+                  Details from Foursquare. We haven&apos;t checked this venue ourselves yet, so confirm hours and entry
+                  before you go.
+                </p>
+              )
+            )}
           </section>
         </div>
 

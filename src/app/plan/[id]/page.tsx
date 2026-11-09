@@ -8,12 +8,13 @@ import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
 import { button } from "@/components/ui";
 import { VisitedToggle } from "@/components/visited-toggle";
-import { longDate, priceBandLabel } from "@/lib/format";
+import { longDate, priceBandLabel, priceLine } from "@/lib/format";
 import { decodeAnswers, encodeAnswers, stopLabel, type Answers } from "@/lib/plan/answers";
 import { buildPlan, type PlannedStop } from "@/lib/plan/build";
 import { searchKey, whereLabel } from "@/lib/plan/describe";
 import { photo } from "@/lib/photos";
-import { getArea, listAreas, listVenues } from "@/lib/venues";
+import type { Venue } from "@/lib/types";
+import { getArea, listAreas, planCandidates, usingSampleData } from "@/lib/venues";
 
 export const metadata: Metadata = {
   title: "Your night",
@@ -25,7 +26,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
   const answers = decodeAnswers(id);
   if (!answers) notFound();
 
-  const plan = buildPlan(answers, listVenues(), listAreas());
+  const plan = buildPlan(answers, await planCandidates(answers), listAreas());
   const hasAnyVenue = plan.stops.some((s) => s.venue);
   const firstVenueArea = plan.stops.find((s) => s.venue)?.venue?.areaSlug;
   const heroPhoto = photo(getArea(answers.area) ? answers.area : (firstVenueArea ?? "hero-street"));
@@ -61,10 +62,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
             renderDetails={(s) => (
               <div className="mt-4 max-w-xl">
                 {s.reason && <p className="font-light text-white/85">{s.reason}</p>}
-                <p className="mt-3 text-sm text-ash">
-                  About £{s.venue!.pricePerHeadGbp} a head. {s.venue!.dressCode}.{" "}
-                  {s.venue!.bookingUrl ? "Book ahead." : "Walk-ins only."}
-                </p>
+                {stopFacts(s.venue!) && <p className="mt-3 text-sm text-ash">{stopFacts(s.venue!)}</p>}
                 <div className="mt-4">
                   <VisitedToggle venueSlug={s.venue!.slug} />
                 </div>
@@ -81,7 +79,8 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                               {alt.name}
                             </span>
                             <span className="mt-0.5 block text-sm text-ash">
-                              {getArea(alt.areaSlug)?.name}, about £{alt.pricePerHeadGbp} a head. {alt.description}
+                              {[getArea(alt.areaSlug)?.name, priceLine(alt)?.toLowerCase()].filter(Boolean).join(", ")}.{" "}
+                              {alt.description}
                             </span>
                           </Link>
                         </li>
@@ -101,7 +100,10 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
               </p>
             )}
           />
-          <p className="text-sm text-ash">Times include travel between stops. Walking times are estimates.</p>
+          <p className="text-sm text-ash">
+            Times include travel between stops. Walking times are estimates.
+            {!usingSampleData && " Venue details come from Foursquare unless we've checked the place ourselves."}
+          </p>
         </section>
 
         <aside className="lg:sticky lg:top-8 lg:self-start">
@@ -126,4 +128,13 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
       </div>
     </>
   );
+}
+
+// "About £55 a head. Smart casual. Book ahead." Only what's known about the venue.
+function stopFacts(venue: Venue): string {
+  const booking = venue.bookingUrl ? "Book ahead" : venue.verified ? "Walk-ins only" : undefined;
+  return [priceLine(venue), venue.dressCode, booking]
+    .filter(Boolean)
+    .map((f) => `${f}.`)
+    .join(" ");
 }

@@ -1,4 +1,4 @@
-import type { OpeningPeriod, VenueType } from "@/lib/types";
+import type { OpeningPeriod, Venue, VenueType } from "@/lib/types";
 
 export const weekdayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -33,6 +33,16 @@ export function friendlyTime(hhmm: string): string {
 
 export function priceBandLabel(band: number): string {
   return "£".repeat(band);
+}
+
+// Matches the budget answers in the questionnaire.
+const bandRange: Record<number, string> = { 1: "Under £40", 2: "£40 to £80", 3: "£80 to £150", 4: "£150 or more" };
+
+/** "About £55 a head" once checked by hand, otherwise the band's range, e.g. "£40 to £80 a head". */
+export function priceLine(venue: Pick<Venue, "pricePerHeadGbp" | "priceBand">): string | undefined {
+  if (venue.pricePerHeadGbp !== undefined) return `About £${venue.pricePerHeadGbp} a head`;
+  if (venue.priceBand !== undefined) return `${bandRange[venue.priceBand]} a head`;
+  return undefined;
 }
 
 /** 0 = Monday, matching venue_hours.weekday. */

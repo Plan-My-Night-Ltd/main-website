@@ -11,6 +11,7 @@ import type { VenueType } from "@/lib/types";
 import { getArea, listAreas, venuesInArea } from "@/lib/venues";
 
 export const dynamicParams = false;
+export const revalidate = 3600;
 
 export function generateStaticParams() {
   return listAreas().map((a) => ({ slug: a.slug }));
@@ -41,7 +42,7 @@ export default async function AreaPage(props: PageProps<"/areas/[slug]">) {
   const { slug } = await props.params;
   const area = getArea(slug);
   if (!area) notFound();
-  const venues = venuesInArea(slug);
+  const venues = await venuesInArea(slug);
   const nearby = listAreas()
     .filter((a) => a.region === area.region && a.slug !== area.slug)
     .slice(0, 4);
@@ -69,8 +70,8 @@ export default async function AreaPage(props: PageProps<"/areas/[slug]">) {
 
         {venues.length === 0 ? (
           <p className="max-w-lg border-t border-line pt-10 text-ash">
-            We&apos;re still choosing places in {area.name}. Plan a night here anyway and we&apos;ll suggest the closest
-            places we&apos;ve checked.
+            We haven&apos;t added places in {area.name} yet. Plan a night here anyway and we&apos;ll suggest the closest
+            places we have.
           </p>
         ) : (
           <div className="grid gap-14 border-t border-line pt-12 lg:grid-cols-3 lg:gap-12">
@@ -90,10 +91,10 @@ export default async function AreaPage(props: PageProps<"/areas/[slug]">) {
                             <span className="text-2xl font-light underline-offset-[6px] group-hover:underline">
                               {v.name}
                             </span>
-                            <span className="text-sm text-ash">{priceBandLabel(v.priceBand)}</span>
+                            {v.priceBand && <span className="text-sm text-ash">{priceBandLabel(v.priceBand)}</span>}
                           </span>
                           <span className="mt-2 block text-[0.9375rem] text-white/70">{v.description}</span>
-                          <span className="mt-2 block text-sm text-ash">Near {v.nearestTube}</span>
+                          {v.nearestTube && <span className="mt-2 block text-sm text-ash">Near {v.nearestTube}</span>}
                         </Link>
                       </li>
                     ))}

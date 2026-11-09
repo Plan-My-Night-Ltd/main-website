@@ -1,4 +1,4 @@
-import { friendlyTime, periodsFor, priceBandLabel, weekdayNames } from "@/lib/format";
+import { friendlyTime, periodsFor, priceBandLabel, priceLine, weekdayNames } from "@/lib/format";
 import type { Venue } from "@/lib/types";
 
 // The practical details a visitor needs before they go, in a fixed order.
@@ -21,14 +21,18 @@ export function VenueFacts({
     return `${friendlyTime(periods[periods.length - 1].closes)} on ${weekdayNames[weekday]}s`;
   })();
 
-  const facts: [string, string][] = [
-    ["Nearest Tube", venue.nearestTube],
-    ["Price per head", `About £${venue.pricePerHeadGbp} (${priceBandLabel(venue.priceBand)})`],
-    ["Dress code", venue.dressCode],
-    ["Door policy", venue.doorPolicy],
-    ["Open until", openUntil],
-    ["Booking", venue.bookingUrl ? "Book ahead" : "Walk-ins only"],
-  ];
+  // Imported venues lack the hand-checked details, so only known facts are listed.
+  const price = priceLine(venue);
+  const facts = (
+    [
+      ["Nearest Tube", venue.nearestTube],
+      ["Price per head", price && venue.priceBand ? `${price.replace(/ a head$/, "")} (${priceBandLabel(venue.priceBand)})` : price],
+      ["Dress code", venue.dressCode],
+      ["Door policy", venue.doorPolicy],
+      ["Open until", openUntil],
+      ["Booking", venue.bookingUrl ? "Book ahead" : venue.verified ? "Walk-ins only" : undefined],
+    ] as [string, string | undefined][]
+  ).filter((f): f is [string, string] => Boolean(f[1]));
   const rule = tone === "onBlack" ? "divide-line border-line" : "divide-stone border-stone";
   const muted = tone === "onBlack" ? "text-ash" : "text-ash-deep";
 
