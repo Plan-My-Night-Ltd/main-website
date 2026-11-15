@@ -37,7 +37,8 @@ export type Venue = {
   cuisine?: string;
   dressCode?: string; // checked
   doorPolicy?: string; // checked
-  bookingUrl?: string;
+  bookingUrl?: string; // checked: a direct booking or tickets page
+  websiteUrl?: string; // from Foursquare
   description: string;
   rating?: number; // Foursquare, 0 to 10
   verified: boolean;

@@ -22,7 +22,7 @@ export function getArea(slug: string): Area | undefined {
 }
 
 const listColumns =
-  "slug, name, type, area_slug, address, lat, lng, nearest_tube, price_band, price_per_head_gbp, vibe_tags, auto_vibe_tags, music_tags, auto_music_tags, cuisine, fsq_categories, dress_code, door_policy, booking_url, description, rating, verified, source";
+  "slug, name, type, area_slug, address, lat, lng, nearest_tube, price_band, price_per_head_gbp, vibe_tags, auto_vibe_tags, music_tags, auto_music_tags, cuisine, fsq_categories, dress_code, door_policy, booking_url, website_url, description, rating, verified, source";
 
 type VenueRow = {
   slug: string;
@@ -44,6 +44,7 @@ type VenueRow = {
   dress_code: string | null;
   door_policy: string | null;
   booking_url: string | null;
+  website_url: string | null;
   description: string | null;
   rating: number | null;
   verified: boolean;
@@ -170,6 +171,7 @@ function toVenue(r: VenueRow): Venue {
     dressCode: r.dress_code ?? undefined,
     doorPolicy: r.door_policy ?? undefined,
     bookingUrl: r.booking_url ?? undefined,
+    websiteUrl: r.website_url ?? undefined,
     description: r.description ?? describeFromCategories(r),
     rating: r.rating ?? undefined,
     verified: r.verified,

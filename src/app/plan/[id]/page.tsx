@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CopyLinkButton } from "@/components/copy-link-button";
-import { EnquiryForm } from "@/components/enquiry-form";
 import { NightLine } from "@/components/night-line";
 import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
@@ -55,7 +54,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
         </div>
       </PhotoHero>
 
-      <div className="mx-auto grid max-w-7xl gap-16 px-4 pt-16 sm:px-8 sm:pt-20 lg:grid-cols-[1.4fr_1fr] lg:gap-24">
+      <div className="mx-auto grid max-w-7xl gap-16 px-4 pt-16 pb-24 sm:px-8 sm:pt-20 sm:pb-32 lg:grid-cols-[1.4fr_1fr] lg:gap-24">
         <section aria-label="Itinerary">
           <NightLine
             stops={plan.stops}
@@ -63,7 +62,8 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
               <div className="mt-4 max-w-xl">
                 {s.reason && <p className="font-light text-white/85">{s.reason}</p>}
                 {stopFacts(s.venue!) && <p className="mt-3 text-sm text-ash">{stopFacts(s.venue!)}</p>}
-                <div className="mt-4">
+                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4">
+                  <BookingLink venue={s.venue!} />
                   <VisitedToggle venueSlug={s.venue!.slug} />
                 </div>
                 {s.alternatives.length > 0 && (
@@ -106,16 +106,8 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
           </p>
         </section>
 
-        <aside className="lg:sticky lg:top-8 lg:self-start">
-          {hasAnyVenue ? (
-            <div className="bg-bone p-6 text-black sm:p-9">
-              <h2 className="text-3xl font-light">Shall we book it?</h2>
-              <p className="mt-3 text-ash-deep">
-                Send us this plan and we&apos;ll contact each venue on your behalf. There&apos;s nothing to pay now.
-              </p>
-              <EnquiryForm plan={plan} />
-            </div>
-          ) : (
+        {!hasAnyVenue && (
+          <aside className="lg:sticky lg:top-8 lg:self-start">
             <div className="border border-line p-6 sm:p-9">
               <h2 className="text-2xl font-light">We couldn&apos;t fill this night yet</h2>
               <p className="mt-3 text-ash">Our list is still growing. A wider area or budget usually finds something.</p>
@@ -123,10 +115,31 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                 Change answers
               </Link>
             </div>
-          )}
-        </aside>
+          </aside>
+        )}
       </div>
     </>
+  );
+}
+
+// Booking goes straight to the venue: its booking page if we've checked one,
+// otherwise its own website, otherwise Google Maps so people can still find it.
+function BookingLink({ venue }: { venue: Venue }) {
+  const tickets = venue.type === "club";
+  const [href, label, style] = venue.bookingUrl
+    ? [venue.bookingUrl, tickets ? "Get tickets" : "Book a table", button.light]
+    : venue.websiteUrl
+      ? [venue.websiteUrl, tickets ? "Tickets on their website" : "Book on their website", button.light]
+      : [
+          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venue.name}, ${venue.address || "London"}`)}`,
+          "Find on Google Maps",
+          button.ghost,
+        ];
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer" className={style}>
+      {label}
+      <span className="sr-only"> for {venue.name} (opens in a new tab)</span>
+    </a>
   );
 }
 
