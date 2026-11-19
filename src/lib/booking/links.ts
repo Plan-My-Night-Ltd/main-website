@@ -45,6 +45,17 @@ function withPrefill(bookingUrl: string, platform: BookingPlatform | undefined, 
   }
 }
 
+/** True when Book opens this branch's own booking page with the night filled in. */
+export function canPrefill(venue: Venue): boolean {
+  const rule = venue.bookingPlatform && prefill[venue.bookingPlatform];
+  if (!rule || !venue.bookingUrl) return false;
+  try {
+    return rule.host.test(new URL(venue.bookingUrl).hostname);
+  } catch {
+    return false;
+  }
+}
+
 /** Booking page if known, else the venue's website, else Google Maps. */
 export function bookingTarget(venue: Venue, request?: BookingRequest): BookingTarget {
   const tickets = venue.type === "club";
@@ -59,7 +70,8 @@ export function bookingTarget(venue: Venue, request?: BookingRequest): BookingTa
     return { href: venue.bookingUrl, label: `${tickets ? "Get tickets" : "Book a table"}${via}`, kind: "book", platform };
   }
   if (venue.websiteUrl) {
-    const label = tickets ? "Tickets on their website" : venue.acceptsReservations === false ? "Visit their website" : "Book on their website";
+    // Usually a homepage, so it isn't called a booking link.
+    const label = tickets ? "Tickets on their website" : "Visit their website";
     return { href: venue.websiteUrl, label, kind: "website" };
   }
   return {

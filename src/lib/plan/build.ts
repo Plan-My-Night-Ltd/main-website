@@ -1,4 +1,4 @@
-import { usualBusyness } from "@/lib/booking/links";
+import { canPrefill, usualBusyness } from "@/lib/booking/links";
 import { friendlyTime, clock, toMinutes, weekdayOf } from "@/lib/format";
 import { groupOptions, stopOrder, vibeOptions, type Answers, type Stop } from "@/lib/plan/answers";
 import type { Area, Venue, VenueType } from "@/lib/types";
@@ -84,6 +84,8 @@ type When = { weekday: number; arrive: number; tonight: boolean };
 function bookingScore(venue: Venue, stop: Stop, answers: Answers, when: When): number {
   if (stop === "club") return 0;
   let s = 0;
+  // Dinner picks whose Book button opens their own booking page, filled in, come first.
+  if (stop === "dinner" && canPrefill(venue)) s += 3;
   const weekendPrime = (when.weekday === 4 || when.weekday === 5) && when.arrive >= toMinutes("19:00") && when.arrive <= toMinutes("21:00");
   // Big groups and Friday or Saturday prime time need somewhere that takes bookings.
   if (stop === "dinner" && (answers.partySize >= bigGroup || weekendPrime)) {
