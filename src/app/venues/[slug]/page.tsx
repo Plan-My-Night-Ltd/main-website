@@ -5,6 +5,7 @@ import { PhotoHero } from "@/components/photo-hero";
 import { button } from "@/components/ui";
 import { VenueFacts } from "@/components/venue-facts";
 import { VisitedToggle } from "@/components/visited-toggle";
+import { bookingTarget } from "@/lib/booking/links";
 import { hoursLine, venueTypeLabel, weekdayNames } from "@/lib/format";
 import { photo } from "@/lib/photos";
 import { getArea, getVenue, usingSampleData, venuesInArea } from "@/lib/venues";
@@ -44,6 +45,8 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
   const area = getArea(venue.areaSlug)!;
   const nearby = (await venuesInArea(area.slug, 4)).filter((v) => v.slug !== venue.slug);
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${venue.lat},${venue.lng}`;
+  // No night chosen here, so the booking page opens on its own default date and size.
+  const booking = bookingTarget(venue);
 
   return (
     <article>
@@ -73,9 +76,9 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
             </h2>
             <VenueFacts venue={venue} />
             <div className="mt-10 flex flex-wrap gap-3">
-              {venue.bookingUrl && (
-                <a href={venue.bookingUrl} target="_blank" rel="noopener noreferrer" className={button.light}>
-                  {venue.type === "club" ? "Get tickets" : "Book a table"}
+              {booking.kind === "book" && (
+                <a href={booking.href} target="_blank" rel="noopener noreferrer" className={button.light}>
+                  {booking.label}
                 </a>
               )}
               <Link href={`/plan?area=${area.slug}`} className={button.ghost}>

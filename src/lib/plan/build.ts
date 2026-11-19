@@ -1,3 +1,4 @@
+import { usualBusyness } from "@/lib/booking/links";
 import { friendlyTime, clock, toMinutes, weekdayOf } from "@/lib/format";
 import { groupOptions, stopOrder, vibeOptions, type Answers, type Stop } from "@/lib/plan/answers";
 import type { Area, Venue, VenueType } from "@/lib/types";
@@ -73,7 +74,32 @@ function inChosenArea(venue: Venue, answers: Answers, areas: Area[]): boolean {
   return centre ? distanceKm(venue, centre) <= areaRadiusKm : false;
 }
 
-function score(venue: Venue, stop: Stop, answers: Answers, prev: Venue | null): number {
+// Booking signals only nudge the ranking. Nothing here says a table is free, so
+// no venue is dropped for them.
+const bigGroup = 6;
+const busyPercent = 70;
+
+type When = { weekday: number; arrive: number; tonight: boolean };
+
+function bookingScore(venue: Venue, stop: Stop, answers: Answers, when: When): number {
+  if (stop === "club") return 0;
+  let s = 0;
+  const weekendPrime = (when.weekday === 4 || when.weekday === 5) && when.arrive >= toMinutes("19:00") && when.arrive <= toMinutes("21:00");
+  // Big groups and Friday or Saturday prime time need somewhere that takes bookings.
+  if (stop === "dinner" && (answers.partySize >= bigGroup || weekendPrime)) {
+    if (venue.acceptsReservations || venue.bookingUrl) s += 2;
+    else if (venue.acceptsReservations === false && answers.partySize >= bigGroup) s -= 2;
+  }
+  // Tonight, a walk-in or a usually quiet hour is likelier to have room.
+  if (when.tonight) {
+    if (venue.acceptsReservations === false && answers.partySize < bigGroup) s += 1;
+    const busy = usualBusyness(venue, when.weekday, when.arrive);
+    if (busy !== undefined) s += busy < busyPercent ? 1 : -1;
+  }
+  return s;
+}
+
+function score(venue: Venue, stop: Stop, answers: Answers, prev: Venue | null, when: When): number {
   const groupTags = groupOptions.find((g) => g.value === answers.group)?.tags ?? [];
   let s = 0;
   s += 3 * venue.vibeTags.filter((t) => answers.vibes.includes(t)).length;
@@ -87,6 +113,7 @@ function score(venue: Venue, stop: Stop, answers: Answers, prev: Venue | null): 
   if (venue.verified) s += 2;
   if (venue.rating !== undefined) s += 1.5 * (venue.rating - 7.5);
   if (prev) s -= 1.5 * distanceKm(prev, venue);
+  s += bookingScore(venue, stop, answers, when);
   return s;
 }
 
@@ -114,8 +141,10 @@ function capitalise(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export function buildPlan(answers: Answers, venues: Venue[], areas: Area[]): Plan {
+/** `today` (YYYY-MM-DD in London) turns on the "tonight" signals; leave it out to ignore them. */
+export function buildPlan(answers: Answers, venues: Venue[], areas: Area[], today?: string): Plan {
   const weekday = weekdayOf(answers.date);
+  const tonight = answers.date === today;
   const stops: PlannedStop[] = [];
   let prev: Venue | null = null;
   let clockNow = toMinutes(answers.start);
@@ -131,7 +160,7 @@ export function buildPlan(answers: Answers, venues: Venue[], areas: Area[]): Pla
         const travel: Travel | undefined = prev ? estimateTravel(prev, v) : undefined;
         const arrive = roundUpToFive(earliest + (travel?.minutes ?? 0));
         const closes = closingTimeIfOpen(v, weekday, arrive, minOpenAfterArrival[stop]);
-        return { v, travel, arrive, closes, s: score(v, stop, answers, prev) };
+        return { v, travel, arrive, closes, s: score(v, stop, answers, prev, { weekday, arrive, tonight }) };
       })
       .filter((c): c is typeof c & { closes: number } => c.closes !== null)
       .sort((a, b) => b.s - a.s || a.v.name.localeCompare(b.v.name));

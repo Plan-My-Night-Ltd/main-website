@@ -1,3 +1,5 @@
+import type { BookingPlatform } from "@/lib/booking/platforms";
+
 // App-side shapes. These mirror the Supabase tables in
 // supabase/migrations/20261102000000_initial_schema.sql (camelCased).
 
@@ -37,7 +39,10 @@ export type Venue = {
   cuisine?: string;
   dressCode?: string; // checked
   doorPolicy?: string; // checked
-  bookingUrl?: string; // checked: a direct booking or tickets page
+  bookingUrl?: string; // checked, or from Google Maps: a direct booking or tickets page
+  bookingPlatform?: BookingPlatform; // from Google Maps or the venue's website
+  acceptsReservations?: boolean; // from Google Maps; undefined when unknown
+  popularTimes?: (number | null)[][]; // Google's usual busyness: [weekday 0 = Monday][hour] = 0 to 100
   websiteUrl?: string; // from Foursquare
   description: string;
   rating?: number; // Foursquare, 0 to 10

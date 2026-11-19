@@ -7,7 +7,8 @@ import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
 import { button } from "@/components/ui";
 import { VisitedToggle } from "@/components/visited-toggle";
-import { longDate, priceBandLabel, priceLine } from "@/lib/format";
+import { bookingFact, bookingTarget, type BookingRequest } from "@/lib/booking/links";
+import { clock, londonToday, longDate, priceBandLabel, priceLine } from "@/lib/format";
 import { decodeAnswers, encodeAnswers, stopLabel, type Answers } from "@/lib/plan/answers";
 import { buildPlan, type PlannedStop } from "@/lib/plan/build";
 import { searchKey, whereLabel } from "@/lib/plan/describe";
@@ -25,7 +26,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
   const answers = decodeAnswers(id);
   if (!answers) notFound();
 
-  const plan = buildPlan(answers, await planCandidates(answers), listAreas());
+  const plan = buildPlan(answers, await planCandidates(answers), listAreas(), londonToday());
   const hasAnyVenue = plan.stops.some((s) => s.venue);
   const firstVenueArea = plan.stops.find((s) => s.venue)?.venue?.areaSlug;
   const heroPhoto = photo(getArea(answers.area) ? answers.area : (firstVenueArea ?? "hero-street"));
@@ -63,7 +64,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                 {s.reason && <p className="font-light text-white/85">{s.reason}</p>}
                 {stopFacts(s.venue!) && <p className="mt-3 text-sm text-ash">{stopFacts(s.venue!)}</p>}
                 <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4">
-                  <BookingLink venue={s.venue!} />
+                  <BookingLink venue={s.venue!} request={{ date: answers.date, time: clock(s.arrive), partySize: answers.partySize }} />
                   <VisitedToggle venueSlug={s.venue!.slug} />
                 </div>
                 {s.alternatives.length > 0 && (
@@ -122,22 +123,13 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
   );
 }
 
-// Booking goes straight to the venue: its booking page if we've checked one,
-// otherwise its own website, otherwise Google Maps so people can still find it.
-function BookingLink({ venue }: { venue: Venue }) {
-  const tickets = venue.type === "club";
-  const [href, label, style] = venue.bookingUrl
-    ? [venue.bookingUrl, tickets ? "Get tickets" : "Book a table", button.light]
-    : venue.websiteUrl
-      ? [venue.websiteUrl, tickets ? "Tickets on their website" : "Book on their website", button.light]
-      : [
-          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${venue.name}, ${venue.address || "London"}`)}`,
-          "Find on Google Maps",
-          button.ghost,
-        ];
+// Booking goes straight to the venue: its booking page with the night filled in if
+// we know it, otherwise its own website, otherwise Google Maps so people can still find it.
+function BookingLink({ venue, request }: { venue: Venue; request: BookingRequest }) {
+  const target = bookingTarget(venue, venue.type === "club" ? undefined : request);
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={style}>
-      {label}
+    <a href={target.href} target="_blank" rel="noopener noreferrer" className={target.kind === "maps" ? button.ghost : button.light}>
+      {target.label}
       <span className="sr-only"> for {venue.name} (opens in a new tab)</span>
     </a>
   );
@@ -145,8 +137,7 @@ function BookingLink({ venue }: { venue: Venue }) {
 
 // "About £55 a head. Smart casual. Book ahead." Only what's known about the venue.
 function stopFacts(venue: Venue): string {
-  const booking = venue.bookingUrl ? "Book ahead" : venue.verified ? "Walk-ins only" : undefined;
-  return [priceLine(venue), venue.dressCode, booking]
+  return [priceLine(venue), venue.dressCode, bookingFact(venue)]
     .filter(Boolean)
     .map((f) => `${f}.`)
     .join(" ");

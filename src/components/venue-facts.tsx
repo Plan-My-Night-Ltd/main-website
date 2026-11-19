@@ -1,3 +1,4 @@
+import { bookingFact } from "@/lib/booking/links";
 import { friendlyTime, periodsFor, priceBandLabel, priceLine, weekdayNames } from "@/lib/format";
 import type { Venue } from "@/lib/types";
 
@@ -30,7 +31,7 @@ export function VenueFacts({
       ["Dress code", venue.dressCode],
       ["Door policy", venue.doorPolicy],
       ["Open until", openUntil],
-      ["Booking", venue.bookingUrl ? "Book ahead" : venue.verified ? "Walk-ins only" : undefined],
+      ["Booking", bookingFact(venue)],
     ] as [string, string | undefined][]
   ).filter((f): f is [string, string] => Boolean(f[1]));
   const rule = tone === "onBlack" ? "divide-line border-line" : "divide-stone border-stone";

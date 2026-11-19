@@ -1,4 +1,5 @@
 import { cache } from "react";
+import { isBookingPlatform } from "@/lib/booking/platforms";
 import { areas } from "@/lib/data/areas";
 import { sampleVenues } from "@/lib/data/sample-venues";
 import { weekdayOf } from "@/lib/format";
@@ -22,7 +23,7 @@ export function getArea(slug: string): Area | undefined {
 }
 
 const listColumns =
-  "slug, name, type, area_slug, address, lat, lng, nearest_tube, price_band, price_per_head_gbp, vibe_tags, auto_vibe_tags, music_tags, auto_music_tags, cuisine, fsq_categories, dress_code, door_policy, booking_url, website_url, description, rating, verified, source";
+  "slug, name, type, area_slug, address, lat, lng, nearest_tube, price_band, price_per_head_gbp, vibe_tags, auto_vibe_tags, music_tags, auto_music_tags, cuisine, fsq_categories, dress_code, door_policy, booking_url, booking_platform, accepts_reservations, popular_times, website_url, description, rating, verified, source";
 
 type VenueRow = {
   slug: string;
@@ -44,6 +45,9 @@ type VenueRow = {
   dress_code: string | null;
   door_policy: string | null;
   booking_url: string | null;
+  booking_platform: string | null;
+  accepts_reservations: boolean | null;
+  popular_times: (number | null)[][] | null;
   website_url: string | null;
   description: string | null;
   rating: number | null;
@@ -171,6 +175,9 @@ function toVenue(r: VenueRow): Venue {
     dressCode: r.dress_code ?? undefined,
     doorPolicy: r.door_policy ?? undefined,
     bookingUrl: r.booking_url ?? undefined,
+    bookingPlatform: isBookingPlatform(r.booking_platform) ? r.booking_platform : undefined,
+    acceptsReservations: r.accepts_reservations ?? undefined,
+    popularTimes: r.popular_times ?? undefined,
     websiteUrl: r.website_url ?? undefined,
     description: r.description ?? describeFromCategories(r),
     rating: r.rating ?? undefined,

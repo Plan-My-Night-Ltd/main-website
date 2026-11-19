@@ -45,6 +45,11 @@ export function priceLine(venue: Pick<Venue, "pricePerHeadGbp" | "priceBand">): 
   return undefined;
 }
 
+/** Today's date in London, YYYY-MM-DD. */
+export function londonToday(): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());
+}
+
 /** 0 = Monday, matching venue_hours.weekday. */
 export function weekdayOf(isoDate: string): number {
   const [y, mo, d] = isoDate.split("-").map(Number);
