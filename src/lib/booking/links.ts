@@ -1,4 +1,4 @@
-import { platformLabel, type BookingPlatform } from "@/lib/booking/platforms";
+import type { BookingPlatform } from "@/lib/booking/platforms";
 import { friendlyTime } from "@/lib/format";
 import type { Venue } from "@/lib/types";
 
@@ -60,14 +60,13 @@ export function canPrefill(venue: Venue): boolean {
 export function bookingTarget(venue: Venue, request?: BookingRequest): BookingTarget {
   const tickets = venue.type === "club";
   const platform = venue.bookingPlatform;
-  const via = platform && platform !== "other" ? ` · ${platformLabel[platform]}` : "";
 
   if (venue.bookingUrl) {
     const prefilled = withPrefill(venue.bookingUrl, platform, request);
     if (prefilled && request) {
-      return { href: prefilled, label: `Book for ${request.partySize} at ${friendlyTime(request.time)}${via}`, kind: "book", platform };
+      return { href: prefilled, label: `Book for ${request.partySize} at ${friendlyTime(request.time)}`, kind: "book", platform };
     }
-    return { href: venue.bookingUrl, label: `${tickets ? "Get tickets" : "Book a table"}${via}`, kind: "book", platform };
+    return { href: venue.bookingUrl, label: tickets ? "Get tickets" : "Book a table", kind: "book", platform };
   }
   if (venue.websiteUrl) {
     // Usually a homepage, so it isn't called a booking link.
@@ -85,11 +84,7 @@ export function bookingTarget(venue: Venue, request?: BookingRequest): BookingTa
 export function bookingFact(venue: Venue): string | undefined {
   if (venue.type === "club") return venue.bookingUrl ? "Book ahead" : venue.verified ? "Walk-ins only" : undefined;
   if (venue.acceptsReservations === false) return "Walk-ins only";
-  if (venue.bookingUrl || venue.acceptsReservations) {
-    return venue.bookingPlatform && venue.bookingPlatform !== "other"
-      ? `Book ahead on ${platformLabel[venue.bookingPlatform]}`
-      : "Book ahead";
-  }
+  if (venue.bookingUrl || venue.acceptsReservations) return "Book ahead";
   return venue.verified ? "Walk-ins only" : undefined;
 }
 
