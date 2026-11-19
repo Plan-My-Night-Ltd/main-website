@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { NightLine } from "@/components/night-line";
 import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
+import { hasLiveTables, TableAvailability, TableAvailabilityLoading } from "@/components/table-availability";
 import { button } from "@/components/ui";
 import { VisitedToggle } from "@/components/visited-toggle";
 import { bookingFact, bookingTarget, type BookingRequest } from "@/lib/booking/links";
@@ -67,6 +69,16 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                   <BookingLink venue={s.venue!} request={{ date: answers.date, time: clock(s.arrive), partySize: answers.partySize }} />
                   <VisitedToggle venueSlug={s.venue!.slug} />
                 </div>
+                {hasLiveTables(s) && (
+                  <Suspense fallback={<TableAvailabilityLoading />}>
+                    <TableAvailability
+                      stop={s}
+                      date={answers.date}
+                      partySize={answers.partySize}
+                      swapHref={(slug) => swapHref(s, slug)}
+                    />
+                  </Suspense>
+                )}
                 {s.alternatives.length > 0 && (
                   <details className="group mt-4">
                     <summary className="inline-flex cursor-pointer items-center gap-2 text-sm text-white/75 underline underline-offset-4 hover:text-white">

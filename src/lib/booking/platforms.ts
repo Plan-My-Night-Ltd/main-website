@@ -55,6 +55,22 @@ export function detectBooking(text: string): DetectedBooking | null {
   return null;
 }
 
+// Tracking and session parameters Google and the platforms add to links. They can
+// expire or credit someone else's referral, so they're dropped before saving.
+const trackingParam = /^(utm_.*|ref|tracking|rwg_token|y_source|gei|opi|source|sourceurl|oiwv|allowguest|hl|cc|corrid|originid|gclid|fbclid)$/i;
+
+/** A booking link without tracking: Google's own reserve links lose their whole query. */
+export function cleanBookingUrl(raw: string): string {
+  try {
+    const url = new URL(raw);
+    if (/(^|\.)google\.[a-z.]+$/.test(url.hostname)) url.search = "";
+    for (const key of [...url.searchParams.keys()]) if (trackingParam.test(key)) url.searchParams.delete(key);
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
 /** Google's "Reserve a table" provider name ("OpenTable", "SevenRooms", ...) as a platform. */
 export function platformFromName(name: string | null | undefined): BookingPlatform | null {
   if (!name) return null;

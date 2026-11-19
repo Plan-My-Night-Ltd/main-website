@@ -17,7 +17,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { createClient } from "@supabase/supabase-js";
-import { detectBooking, platformFromName, type BookingPlatform } from "../src/lib/booking/platforms.ts";
+import { cleanBookingUrl, detectBooking, platformFromName, type BookingPlatform } from "../src/lib/booking/platforms.ts";
 
 const ACTOR = "compass~crawler-google-places";
 const APIFY = "https://api.apify.com/v2";
@@ -187,6 +187,14 @@ function popularTimes(p: Place): (number | null)[][] | null {
   });
 }
 
+function isHomepage(link: string): boolean {
+  try {
+    return new URL(link).pathname.replace(/\/+$/, "") === "";
+  } catch {
+    return true;
+  }
+}
+
 // ---------- The venue's own website ----------
 
 async function fetchText(pageUrl: string): Promise<string | null> {
@@ -302,10 +310,17 @@ for (const v of venues) {
   update.google_place_id = place.placeId ?? null;
   update.booking_platform = detected?.platform ?? platformFromName(provider?.name);
   update.booking_platform_id = detected?.id ?? null;
-  const bookingUrl = detected?.url ?? links[0] ?? provider?.reserveTableUrl ?? place.reserveTableUrl ?? undefined;
-  // A booking link someone checked by hand stays as it is.
-  if (bookingUrl && !(v.verified && v.booking_url)) update.booking_url = bookingUrl;
   update.accepts_reservations = acceptsReservations(place) ?? (update.booking_platform ? true : null);
+  // A homepage isn't a booking page, and a walk-in venue's "reservation" link is
+  // usually a page saying it doesn't take them.
+  const pageLinks = links.filter((l) => !isHomepage(l));
+  const bookingUrl =
+    detected?.url ??
+    (update.accepts_reservations === false && !update.booking_platform
+      ? undefined
+      : (pageLinks[0] ?? provider?.reserveTableUrl ?? place.reserveTableUrl ?? undefined));
+  // A booking link someone checked by hand stays as it is.
+  if (bookingUrl && !(v.verified && v.booking_url)) update.booking_url = cleanBookingUrl(bookingUrl);
   update.popular_times = popularTimes(place);
 
   if (update.popular_times) counts.popularTimes++;
