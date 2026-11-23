@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { button } from "@/components/ui";
 
-export function CopyLinkButton() {
+/** Shares `path` (the signed share link, so the friend opening it doesn't need an account). */
+export function CopyLinkButton({ path }: { path: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    const url = window.location.href;
+    const url = new URL(path, window.location.origin).href;
     if (navigator.share && window.matchMedia("(pointer: coarse)").matches) {
       await navigator.share({ title: "Our night out", url }).catch(() => {});
       return;

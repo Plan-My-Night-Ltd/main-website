@@ -18,7 +18,7 @@ export default async function SignupPage(props: PageProps<"/signup">) {
     <div className="mx-auto max-w-md px-4 pt-16 pb-8 sm:pt-24">
       <h1 className="text-title font-light">Create an account</h1>
       <p className="mt-3 text-ash">
-        Keep every night you plan, and a record of the places you&apos;ve been. Planning a night never needs an account.
+        See the nights we plan for you, keep every one, and a record of the places you&apos;ve been.
       </p>
       <AuthForm mode="signup" next={next} />
     </div>

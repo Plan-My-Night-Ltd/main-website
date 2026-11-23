@@ -40,9 +40,14 @@ export function SiteFooter() {
               ? "Preview build. Venues shown are sample data, not real recommendations."
               : `© ${new Date().getFullYear()} PlanMyNights`}
           </p>
-          <Link href="/credits" className="hover:text-white">
-            Photo credits
-          </Link>
+          <div className="flex gap-6">
+            <Link href="/privacy" className="hover:text-white">
+              Privacy
+            </Link>
+            <Link href="/credits" className="hover:text-white">
+              Photo credits
+            </Link>
+          </div>
         </div>
       </div>
     </footer>

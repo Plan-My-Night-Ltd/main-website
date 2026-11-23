@@ -1,20 +1,25 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, type ReactNode } from "react";
 import { CopyLinkButton } from "@/components/copy-link-button";
+import { EmailOptIn } from "@/components/email-opt-in";
 import { NightLine } from "@/components/night-line";
 import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
+import { SignupGate } from "@/components/signup-gate";
 import { hasLiveTables, TableAvailability, TableAvailabilityLoading } from "@/components/table-availability";
 import { button } from "@/components/ui";
 import { VisitedToggle } from "@/components/visited-toggle";
 import { bookingFact, bookingTarget, type BookingRequest } from "@/lib/booking/links";
-import { clock, londonToday, longDate, priceBandLabel, priceLine } from "@/lib/format";
+import { clock, friendlyTime, londonToday, longDate, priceBandLabel, priceLine } from "@/lib/format";
 import { decodeAnswers, encodeAnswers, stopLabel, type Answers } from "@/lib/plan/answers";
 import { buildPlan, type PlannedStop } from "@/lib/plan/build";
 import { searchKey, whereLabel } from "@/lib/plan/describe";
-import { photo } from "@/lib/photos";
+import { isSharedLink, sharePath } from "@/lib/plan/share";
+import { photo, type Photo } from "@/lib/photos";
+import { authConfigured } from "@/lib/supabase/env";
+import { serverSupabase } from "@/lib/supabase/server";
 import type { Venue } from "@/lib/types";
 import { getArea, listAreas, planCandidates, usingSampleData } from "@/lib/venues";
 
@@ -23,39 +28,65 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+// Who is looking at the plan: the signed-in person (if any), and whether we still
+// need to ask them about emails. If the profile can't be read, we don't ask.
+async function planViewer() {
+  const supabase = await serverSupabase();
+  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+  if (!supabase || !user) return { user: null, askAboutEmails: false };
+  const { data } = await supabase.from("profiles").select("marketing_opt_in").eq("id", user.id).maybeSingle();
+  return { user, askAboutEmails: data != null && data.marketing_opt_in === null };
+}
+
 export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
-  const { id } = await props.params;
+  const [{ id }, query] = await Promise.all([props.params, props.searchParams]);
   const answers = decodeAnswers(id);
   if (!answers) notFound();
 
-  const plan = buildPlan(answers, await planCandidates(answers), listAreas(), londonToday());
-  const hasAnyVenue = plan.stops.some((s) => s.venue);
-  const firstVenueArea = plan.stops.find((s) => s.venue)?.venue?.areaSlug;
+  const [candidates, viewer] = await Promise.all([planCandidates(answers), planViewer()]);
+  const plan = buildPlan(answers, candidates, listAreas(), londonToday());
+  const filledStops = plan.stops.filter((s) => s.venue);
+  const hasAnyVenue = filledStops.length > 0;
+  const firstVenueArea = filledStops[0]?.venue?.areaSlug;
   const heroPhoto = photo(getArea(answers.area) ? answers.area : (firstVenueArea ?? "hero-street"));
   const swapHref = (stop: PlannedStop, slug: string) => {
     const swapped: Answers = { ...answers, swaps: { ...answers.swaps, [stop.stop]: slug } };
     return `/plan/${encodeAnswers(swapped)}`;
   };
 
+  // Signed-out guests see an outline of the night and a sign-up pop-up, unless a
+  // friend shared the plan with them. The venues themselves never reach their browser.
+  // An empty plan isn't worth signing up for, so that shows as normal.
+  const locked = authConfigured && !viewer.user && hasAnyVenue && !isSharedLink(id, query.s);
+
+  if (locked) {
+    const count = filledStops.length;
+    const summary = `${count} ${count === 1 ? "stop" : "stops"} in ${whereLabel(answers.area)} on ${longDate(answers.date)}, from ${friendlyTime(clock(filledStops[0].arrive))}.`;
+    return (
+      <>
+        <PlanHero answers={answers} heroPhoto={heroPhoto} />
+        <div className="mx-auto max-w-7xl px-4 pt-16 pb-24 sm:px-8 sm:pt-20 sm:pb-32">
+          <PlanTeaser stops={filledStops} />
+        </div>
+        <SignupGate next={`/plan/${id}`} summary={summary} editHref={`/plan?edit=${id}`} />
+      </>
+    );
+  }
+
   return (
     <>
-      <PhotoHero photo={heroPhoto} height="short">
-        <h1 className="text-display font-light">Your night</h1>
-        <p className="mt-4 text-lg font-light text-white/80">
-          {longDate(answers.date)} in {whereLabel(answers.area)}. {answers.partySize}{" "}
-          {answers.partySize === 1 ? "person" : "people"},{" "}
-          <span className="whitespace-nowrap">{priceBandLabel(answers.budget)}</span>.
-        </p>
+      <PlanHero answers={answers} heroPhoto={heroPhoto}>
         <div className="mt-8 flex flex-wrap gap-3">
-          <CopyLinkButton />
+          <CopyLinkButton path={sharePath(id)} />
           <Link href={`/plan?edit=${id}`} className={button.ghost}>
             Change answers
           </Link>
         </div>
-        <div className="mt-5 min-h-5">
+        <div className="mt-5 min-h-5 space-y-2">
           <SavePlan planKey={id} searchKey={searchKey(answers)} answers={answers} />
+          {viewer.askAboutEmails && <EmailOptIn />}
         </div>
-      </PhotoHero>
+      </PlanHero>
 
       <div className="mx-auto grid max-w-7xl gap-16 px-4 pt-16 pb-24 sm:px-8 sm:pt-20 sm:pb-32 lg:grid-cols-[1.4fr_1fr] lg:gap-24">
         <section aria-label="Itinerary">
@@ -132,6 +163,45 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
         )}
       </div>
     </>
+  );
+}
+
+function PlanHero({ answers, heroPhoto, children }: { answers: Answers; heroPhoto?: Photo; children?: ReactNode }) {
+  return (
+    <PhotoHero photo={heroPhoto} height="short">
+      <h1 className="text-display font-light">Your night</h1>
+      <p className="mt-4 text-lg font-light text-white/80">
+        {longDate(answers.date)} in {whereLabel(answers.area)}. {answers.partySize}{" "}
+        {answers.partySize === 1 ? "person" : "people"},{" "}
+        <span className="whitespace-nowrap">{priceBandLabel(answers.budget)}</span>.
+      </p>
+      {children}
+    </PhotoHero>
+  );
+}
+
+// The shape of the night behind the sign-up pop-up: real times and stop types,
+// blurred bars where the venues go. Deliberately contains no venue details.
+function PlanTeaser({ stops }: { stops: PlannedStop[] }) {
+  const cols = "grid grid-cols-[4.25rem_1.25rem_1fr] gap-x-3 sm:grid-cols-[5rem_1.25rem_1fr] sm:gap-x-4";
+  return (
+    <ol aria-hidden className="pointer-events-none max-w-3xl select-none">
+      {stops.map((s, i) => (
+        <li key={s.stop} className={cols}>
+          <time className="pt-0.5 text-right text-[0.9375rem] font-light sm:text-base">{friendlyTime(clock(s.arrive))}</time>
+          <span className="flex flex-col items-center">
+            <span className="mt-2 size-3 shrink-0 rounded-full border border-white bg-black" />
+            {i < stops.length - 1 && <span className="w-px flex-1 bg-white/70" />}
+          </span>
+          <div className="pb-14">
+            <p className="text-sm text-ash">{stopLabel[s.stop]}</p>
+            <div className="mt-2 h-8 w-[min(18rem,80%)] rounded-full bg-white/25 blur-md" />
+            <div className="mt-3 h-4 w-[min(12rem,60%)] rounded-full bg-white/10 blur-md" />
+            <div className="mt-5 h-16 max-w-xl rounded bg-white/5 blur-lg" />
+          </div>
+        </li>
+      ))}
+    </ol>
   );
 }
 

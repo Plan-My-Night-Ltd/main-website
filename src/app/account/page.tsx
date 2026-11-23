@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { removeSavedPlan, signOut } from "@/app/account/actions";
+import { removeSavedPlan, setMarketingOptIn, signOut } from "@/app/account/actions";
 import { button } from "@/components/ui";
 import { longDate, venueTypeLabel } from "@/lib/format";
 import type { Answers } from "@/lib/plan/answers";
@@ -27,7 +27,7 @@ export default async function AccountPage() {
   if (!supabase || !user) redirect("/login?next=/account");
 
   const [{ data: profile }, { data: plans }, { data: visits }] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id", user.id).maybeSingle(),
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle<{ display_name: string | null; marketing_opt_in?: boolean | null }>(),
     supabase
       .from("saved_plans")
       .select("id, plan_key, answers, night_date, area, updated_at")
@@ -77,6 +77,24 @@ export default async function AccountPage() {
             {past.length > 0 && <PlanList heading="Past nights" plans={past} />}
           </>
         )}
+      </section>
+
+      <section aria-labelledby="emails" className="mt-24">
+        <h2 id="emails" className="text-title font-light">
+          Emails from us
+        </h2>
+        <div className="mt-8 flex flex-col gap-4 border-y border-line py-5 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-ash">
+            {profile?.marketing_opt_in
+              ? "You get our pick of London nights by email."
+              : "You don't get our emails. We'll only email you about your account and bookings."}
+          </p>
+          <form action={setMarketingOptIn.bind(null, !profile?.marketing_opt_in)}>
+            <button type="submit" className={button.ghost}>
+              {profile?.marketing_opt_in ? "Stop these emails" : "Send me them"}
+            </button>
+          </form>
+        </div>
       </section>
 
       <section aria-labelledby="visited" className="mt-24">
