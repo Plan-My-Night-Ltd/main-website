@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { signOut } from "@/app/account/actions";
+import { isAdminEmail } from "@/lib/admin";
 import { useUser } from "@/lib/supabase/use-user";
 
 const providerLabel: Record<string, string> = { google: "Google", apple: "Apple", email: "email" };
@@ -108,6 +109,25 @@ export function AccountMenu() {
   );
 }
 
+/** "Control Center" in the header, for the admin account only. Everyone else sees nothing. */
+export function ControlCenterLink() {
+  const user = useUser();
+  const pathname = usePathname();
+  if (!user || !isAdminEmail(user.email)) return null;
+  const here = pathname.startsWith("/control-center");
+  return (
+    <Link
+      href="/control-center"
+      aria-current={here ? "page" : undefined}
+      className={`hidden rounded-full border px-4 py-1.5 transition-colors sm:inline-flex ${
+        here ? "border-white bg-white text-black" : "border-white/35 text-white hover:border-white"
+      }`}
+    >
+      Control Center
+    </Link>
+  );
+}
+
 /** The person's details, links and "Log out", inside the account menu. */
 export function AccountDetails({ user, onNavigate }: { user: User; onNavigate: () => void }) {
   const name = displayName(user);
@@ -130,6 +150,11 @@ export function AccountDetails({ user, onNavigate }: { user: User; onNavigate: (
       </p>
 
       <nav className="mt-5 border-t border-line">
+        {isAdminEmail(user.email) && (
+          <MenuLink href="/control-center" onClick={onNavigate}>
+            Control Center
+          </MenuLink>
+        )}
         <MenuLink href="/account" onClick={onNavigate}>
           Your nights
         </MenuLink>

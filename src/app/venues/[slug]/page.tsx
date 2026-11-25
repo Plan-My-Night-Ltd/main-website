@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { OutboundLink } from "@/components/outbound-link";
 import { PhotoHero } from "@/components/photo-hero";
 import { button } from "@/components/ui";
 import { VenueFacts } from "@/components/venue-facts";
@@ -77,9 +78,13 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
             <VenueFacts venue={venue} />
             <div className="mt-10 flex flex-wrap gap-3">
               {booking.kind === "book" && (
-                <a href={booking.href} target="_blank" rel="noopener noreferrer" className={button.light}>
+                <OutboundLink
+                  href={booking.href}
+                  className={button.light}
+                  click={{ venueSlug: venue.slug, kind: "book", platform: booking.platform, source: "venue" }}
+                >
                   {booking.label}
-                </a>
+                </OutboundLink>
               )}
               <Link href={`/plan?area=${area.slug}`} className={button.ghost}>
                 Plan a night in {area.name}
@@ -116,14 +121,13 @@ export default async function VenuePage(props: PageProps<"/venues/[slug]">) {
 
             <h2 className="mt-12 mb-2 text-sm text-ash">Address</h2>
             <address className="not-italic">{venue.address}</address>
-            <a
+            <OutboundLink
               href={mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
               className="mt-2 inline-block text-sm text-white/75 underline underline-offset-4 hover:text-white"
+              click={{ venueSlug: venue.slug, kind: "maps", source: "venue" }}
             >
               Open in Google Maps
-            </a>
+            </OutboundLink>
 
             {usingSampleData ? (
               <p className="mt-12 text-sm text-ash">This is a sample venue used to preview the site.</p>

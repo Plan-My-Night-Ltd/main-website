@@ -3,11 +3,12 @@ import Link from "next/link";
 import { photo } from "@/lib/photos";
 import type { Area } from "@/lib/types";
 
-// A neighbourhood as a photograph with its name set over the bottom edge.
-export function AreaTile({ area, note, sizes }: { area: Area; note?: string; sizes: string }) {
+// A neighbourhood as a photograph with its name set over the bottom edge. Links to
+// the neighbourhood's page unless `href` says otherwise.
+export function AreaTile({ area, note, sizes, href }: { area: Area; note?: string; sizes: string; href?: string }) {
   const p = photo(area.slug);
   return (
-    <Link href={`/areas/${area.slug}`} className="group relative block aspect-[4/5] overflow-hidden bg-raised">
+    <Link href={href ?? `/areas/${area.slug}`} className="group relative block aspect-[4/5] overflow-hidden bg-raised">
       {p && (
         <Image
           src={p.src}

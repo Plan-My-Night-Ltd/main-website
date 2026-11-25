@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Questionnaire, type DateOption } from "@/components/questionnaire";
 import { launchAreaSlugs } from "@/lib/data/areas";
-import { decodeAnswers } from "@/lib/plan/answers";
+import { decodeAnswers, type Answers } from "@/lib/plan/answers";
 import { getArea, listAreas } from "@/lib/venues";
 
 export const metadata: Metadata = {
@@ -42,6 +42,11 @@ export default async function PlanPage(props: PageProps<"/plan">) {
   const edit = typeof params.edit === "string" ? decodeAnswers(params.edit) : null;
   const areaParam = typeof params.area === "string" && getArea(params.area) ? params.area : undefined;
 
+  const options = dateOptions();
+  // "Plan again" from a past night keeps the answers but not the date that's gone.
+  const repeat: Partial<Answers> | null = edit && edit.date < options[0].value ? { ...edit, date: undefined } : edit;
+  if (repeat && repeat.date === undefined) delete repeat.date;
+
   const all = listAreas();
   const ordered = [
     ...launchAreaSlugs.map((slug) => getArea(slug)!),
@@ -50,9 +55,9 @@ export default async function PlanPage(props: PageProps<"/plan">) {
 
   return (
     <Questionnaire
-      dateOptions={dateOptions()}
+      dateOptions={options}
       areas={ordered.map(({ slug, name }) => ({ slug, name }))}
-      initial={edit ? { ...edit, swaps: undefined } : areaParam ? { area: areaParam } : {}}
+      initial={repeat ? { ...repeat, swaps: undefined } : areaParam ? { area: areaParam } : {}}
     />
   );
 }

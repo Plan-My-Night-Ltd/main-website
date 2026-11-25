@@ -4,16 +4,17 @@ import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
 import { BookedToggle } from "@/components/booked-toggle";
 import { CopyLinkButton } from "@/components/copy-link-button";
-import { EmailOptIn } from "@/components/email-opt-in";
 import { NightLine } from "@/components/night-line";
+import { OutboundLink } from "@/components/outbound-link";
 import { PhotoHero } from "@/components/photo-hero";
 import { SavePlan } from "@/components/save-plan";
 import { SignupGate } from "@/components/signup-gate";
 import { hasLiveTables, TableAvailability, TableAvailabilityLoading } from "@/components/table-availability";
 import { button } from "@/components/ui";
+import { isAdminEmail } from "@/lib/admin";
 import { bookingFact, bookingTarget, type BookingRequest } from "@/lib/booking/links";
 import { clock, friendlyTime, londonToday, longDate, priceBandLabel, priceLine } from "@/lib/format";
-import { decodeAnswers, encodeAnswers, stopLabel, type Answers } from "@/lib/plan/answers";
+import { decodeAnswers, encodeAnswers, stopLabel, type Answers, type Stop } from "@/lib/plan/answers";
 import { buildPlan, type PlannedStop } from "@/lib/plan/build";
 import { searchKey, whereLabel } from "@/lib/plan/describe";
 import { isSharedLink, sharePath } from "@/lib/plan/share";
@@ -28,22 +29,18 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// Who is looking at the plan: the signed-in person (if any), whether we still need
-// to ask them about emails (not if the profile can't be read), and which venues
+// Who is looking at the plan: the signed-in person (if any), and which venues
 // they've already marked as booked for this night.
 async function planViewer(nightDate: string) {
   const supabase = await serverSupabase();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  if (!supabase || !user) return { user: null, askAboutEmails: false, booked: new Set<string>() };
-  const [{ data: profile }, { data: bookings }] = await Promise.all([
-    supabase.from("profiles").select("marketing_opt_in").eq("id", user.id).maybeSingle(),
-    supabase.from("bookings").select("venue_slug").eq("night_date", nightDate).returns<{ venue_slug: string }[]>(),
-  ]);
-  return {
-    user,
-    askAboutEmails: profile != null && profile.marketing_opt_in === null,
-    booked: new Set((bookings ?? []).map((b) => b.venue_slug)),
-  };
+  if (!supabase || !user) return { user: null, booked: new Set<string>() };
+  const { data: bookings } = await supabase
+    .from("bookings")
+    .select("venue_slug")
+    .eq("night_date", nightDate)
+    .returns<{ venue_slug: string }[]>();
+  return { user, booked: new Set((bookings ?? []).map((b) => b.venue_slug)) };
 }
 
 export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
@@ -66,6 +63,8 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
   // friend shared the plan with them. The venues themselves never reach their browser.
   // An empty plan isn't worth signing up for, so that shows as normal.
   const locked = authConfigured && !viewer.user && hasAnyVenue && !isSharedLink(id, query.s);
+  // Opened from the Control Center to see someone else's plan: don't save it to the admin's own account.
+  const adminView = query.admin === "1" && isAdminEmail(viewer.user?.email);
 
   if (locked) {
     const count = filledStops.length;
@@ -90,9 +89,12 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
             Change answers
           </Link>
         </div>
-        <div className="mt-5 min-h-5 space-y-2">
-          <SavePlan planKey={id} searchKey={searchKey(answers)} answers={answers} />
-          {viewer.askAboutEmails && <EmailOptIn />}
+        <div className="mt-5 min-h-5">
+          {adminView ? (
+            <p className="text-sm text-white/70">Viewing as admin. This plan isn&apos;t saved to your account.</p>
+          ) : (
+            <SavePlan planKey={id} searchKey={searchKey(answers)} answers={answers} />
+          )}
         </div>
       </PlanHero>
 
@@ -105,7 +107,12 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                 {s.reason && <p className="font-light text-white/85">{s.reason}</p>}
                 {stopFacts(s.venue!) && <p className="mt-3 text-sm text-ash">{stopFacts(s.venue!)}</p>}
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <BookingLink venue={s.venue!} request={{ date: answers.date, time: clock(s.arrive), partySize: answers.partySize }} />
+                  <BookingLink
+                    venue={s.venue!}
+                    stop={s.stop}
+                    planKey={id}
+                    request={{ date: answers.date, time: clock(s.arrive), partySize: answers.partySize }}
+                  />
                   <BookedToggle
                     booking={{ venueSlug: s.venue!.slug, nightDate: answers.date, stop: s.stop, partySize: answers.partySize, planKey: id }}
                     initialBooked={viewer.booked.has(s.venue!.slug)}
@@ -119,6 +126,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
                       stop={s}
                       date={answers.date}
                       partySize={answers.partySize}
+                      planKey={id}
                       swapHref={(slug) => swapHref(s, slug)}
                     />
                   </Suspense>
@@ -220,13 +228,27 @@ function PlanTeaser({ stops }: { stops: PlannedStop[] }) {
 
 // Booking goes straight to the venue: its booking page with the night filled in if
 // we know it, otherwise its own website, otherwise Google Maps so people can still find it.
-function BookingLink({ venue, request }: { venue: Venue; request: BookingRequest }) {
+// Each tap is counted for the Control Center.
+function BookingLink({ venue, request, stop, planKey }: { venue: Venue; request: BookingRequest; stop: Stop; planKey: string }) {
   const target = bookingTarget(venue, venue.type === "club" ? undefined : request);
   return (
-    <a href={target.href} target="_blank" rel="noopener noreferrer" className={target.kind === "maps" ? button.ghost : button.light}>
+    <OutboundLink
+      href={target.href}
+      className={target.kind === "maps" ? button.ghost : button.light}
+      click={{
+        venueSlug: venue.slug,
+        kind: target.kind,
+        platform: target.platform,
+        source: "plan",
+        stop,
+        nightDate: request.date,
+        partySize: request.partySize,
+        planKey,
+      }}
+    >
       {target.label}
       <span className="sr-only"> for {venue.name} (opens in a new tab)</span>
-    </a>
+    </OutboundLink>
   );
 }
 

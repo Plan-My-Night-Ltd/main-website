@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OutboundLink } from "@/components/outbound-link";
 import { checkAvailability, checkable, timesNear } from "@/lib/booking/availability";
 import { bookingTarget } from "@/lib/booking/links";
 import { clock, friendlyTime, toMinutes } from "@/lib/format";
@@ -13,6 +14,7 @@ type Props = {
   stop: PlannedStop;
   date: string;
   partySize: number;
+  planKey: string;
   swapHref: (slug: string) => string;
 };
 
@@ -25,7 +27,7 @@ export function TableAvailabilityLoading() {
   return <p className="mt-4 text-sm text-ash">Checking tables on OpenTable…</p>;
 }
 
-export async function TableAvailability({ stop, date, partySize, swapHref }: Props) {
+export async function TableAvailability({ stop, date, partySize, planKey, swapHref }: Props) {
   const pick = stop.venue!;
   const others = stop.alternatives.filter(checkable);
   const live = await checkAvailability([pick, ...others], date, partySize);
@@ -44,7 +46,7 @@ export async function TableAvailability({ stop, date, partySize, swapHref }: Pro
     return (
       <div className="mt-4">
         <p className="text-sm text-ash">Tables for {people} on OpenTable:</p>
-        <TimeChips venue={pick} times={near.slice(0, 4).sort()} date={date} partySize={partySize} />
+        <TimeChips venue={pick} times={near.slice(0, 4).sort()} date={date} partySize={partySize} stop={stop.stop} planKey={planKey} />
       </div>
     );
   }
@@ -61,7 +63,7 @@ export async function TableAvailability({ stop, date, partySize, swapHref }: Pro
       {later.length > 0 && (
         <div>
           <p className="text-sm text-ash">Other times that day:</p>
-          <TimeChips venue={pick} times={later} date={date} partySize={partySize} />
+          <TimeChips venue={pick} times={later} date={date} partySize={partySize} stop={stop.stop} planKey={planKey} />
         </div>
       )}
       {withTables.length > 0 && (
@@ -83,22 +85,26 @@ export async function TableAvailability({ stop, date, partySize, swapHref }: Pro
   );
 }
 
-function TimeChips({ venue, times, date, partySize }: { venue: Venue; times: string[]; date: string; partySize: number }) {
+type ChipProps = { venue: Venue; times: string[]; date: string; partySize: number; stop: PlannedStop["stop"]; planKey: string };
+
+function TimeChips({ venue, times, date, partySize, stop, planKey }: ChipProps) {
   return (
     <ul className="mt-2 flex flex-wrap gap-2">
-      {times.map((t) => (
+      {times.map((t) => {
+        const target = bookingTarget(venue, { date, time: t, partySize });
+        return (
         <li key={t}>
-          <a
-            href={bookingTarget(venue, { date, time: t, partySize }).href}
-            target="_blank"
-            rel="noopener noreferrer"
+          <OutboundLink
+            href={target.href}
+            click={{ venueSlug: venue.slug, kind: target.kind, platform: target.platform, source: "plan_time", stop, nightDate: date, partySize, planKey }}
             className="inline-flex rounded-full border border-white/35 px-4 py-1.5 text-sm text-white transition-colors hover:border-white"
           >
             {friendlyTime(t)}
             <span className="sr-only"> at {venue.name} on OpenTable (opens in a new tab)</span>
-          </a>
+          </OutboundLink>
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }

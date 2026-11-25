@@ -42,14 +42,16 @@ export default function PrivacyPage() {
             planned it.
           </li>
           <li>
-            <strong>Places you&apos;ve been.</strong> Venues you mark as visited.
+            <strong>Places you&apos;ve been.</strong> Venues you mark as visited or as booked.
+          </li>
+          <li>
+            <strong>Links you use.</strong> When you tap through from PlanMyNights to a venue&apos;s booking page,
+            website or Google Maps, we note which venue, which link and when. If you&apos;re signed in, this is linked
+            to your account.
           </li>
           <li>
             <strong>Booking requests.</strong> If you ask us to book, your name, email, phone number, party size, date
             and any notes.
-          </li>
-          <li>
-            <strong>Your email choice.</strong> Whether you want our emails, and when you told us.
           </li>
           <li>
             <strong>Technical data.</strong> Cookies that keep you signed in, and the IP address and browser details
@@ -69,13 +71,9 @@ export default function PrivacyPage() {
             the venue (contract).
           </li>
           <li>
-            <strong>To improve PlanMyNights.</strong> For example, seeing which areas and budgets people choose and how
-            often they come back, so our recommendations get better. We have a legitimate interest in understanding
+            <strong>To improve PlanMyNights.</strong> For example, seeing which areas and budgets people choose, which
+            venues and booking sites they go on to, and how often they come back, so our recommendations get better. We have a legitimate interest in understanding
             how the service is used.
-          </li>
-          <li>
-            <strong>To email you our picks of London nights.</strong> Only if you said yes (consent). You can stop
-            these at any time from your account or the link in any email.
           </li>
           <li>
             <strong>To keep the site secure and meet our legal duties</strong> (legitimate interests and legal
@@ -83,8 +81,8 @@ export default function PrivacyPage() {
           </li>
         </List>
         <p className="mt-4">
-          We don&apos;t sell your data, and we don&apos;t use it for advertising. We&apos;ll always email you about your
-          account and any booking you&apos;ve requested, whatever your email choice.
+          We don&apos;t sell your data, and we don&apos;t use it for advertising. We only email you about your account
+          and bookings you&apos;ve asked us to make. We don&apos;t send marketing emails.
         </p>
       </Section>
 
@@ -93,7 +91,7 @@ export default function PrivacyPage() {
         <List>
           <li>Supabase, which stores our database and runs sign-in.</li>
           <li>Vercel, which hosts the website.</li>
-          <li>Resend, which sends our emails.</li>
+          <li>Resend, which sends account and booking emails.</li>
           <li>Google or Apple, only if you choose to sign in with them.</li>
           <li>The venue, for a booking you ask us to make.</li>
         </List>
@@ -126,8 +124,7 @@ export default function PrivacyPage() {
       <Section title="Your rights">
         <p>
           Under UK data protection law you can ask to see the data we hold about you, correct it, delete it, receive a
-          copy to take elsewhere, or ask us to stop or limit using it. Where we rely on your consent, you can withdraw
-          it at any time. Email {contactEmail}, and we&apos;ll reply within one month.
+          copy to take elsewhere, or ask us to stop or limit using it. Email {contactEmail}, and we&apos;ll reply within one month.
         </p>
         <p className="mt-4">
           If you&apos;re unhappy with how we&apos;ve handled your data, you can complain to the Information
