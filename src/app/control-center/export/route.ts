@@ -1,4 +1,4 @@
-import { call, type AdminUser, type Bookings } from "@/app/control-center/data";
+import { call, sessionEmail, type AdminUser, type Bookings } from "@/app/control-center/data";
 import { label } from "@/components/control-center/labels";
 import { isAdminEmail } from "@/lib/admin";
 import { serverSupabase } from "@/lib/supabase/server";
@@ -17,8 +17,7 @@ function csv(rows: (string | number | boolean | null | undefined)[][]): string {
 
 export async function GET(request: Request) {
   const supabase = await serverSupabase();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  if (!supabase || !user || !isAdminEmail(user.email)) return new Response("Not found", { status: 404 });
+  if (!supabase || !isAdminEmail(await sessionEmail(supabase))) return new Response("Not found", { status: 404 });
 
   const type = new URL(request.url).searchParams.get("type");
   const stamp = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/London" }).format(new Date());

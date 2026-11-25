@@ -10,12 +10,25 @@ import type { VenueType } from "@/lib/types";
 // supabase/migrations/20261125000100_control_center.sql. They check the caller is
 // the admin themselves, so this file's checks only decide what to render.
 
+/**
+ * The signed-in person's email from their session token, or null when signed out.
+ * getClaims() checks the token's signature locally rather than asking Supabase
+ * Auth over the network (proxy.ts has already refreshed it), which saves a round
+ * trip on every Control Center load. It's safe to rely on here because the
+ * admin_* functions check the account again in the database.
+ */
+export async function sessionEmail(supabase: SupabaseClient): Promise<string | null> {
+  const { data } = await supabase.auth.getClaims();
+  const email = data?.claims?.email;
+  return data?.claims ? (typeof email === "string" ? email : "") : null;
+}
+
 /** The signed-in admin's Supabase client. Signed out: to sign in. Anyone else: a plain 404. */
 export async function requireAdmin(next = "/control-center"): Promise<SupabaseClient> {
   const supabase = await serverSupabase();
-  const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  if (!supabase || !user) redirect(`/login?next=${encodeURIComponent(next)}`);
-  if (!isAdminEmail(user.email)) notFound();
+  const email = supabase ? await sessionEmail(supabase) : null;
+  if (!supabase || email === null) redirect(`/login?next=${encodeURIComponent(next)}`);
+  if (!isAdminEmail(email)) notFound();
   return supabase;
 }
 

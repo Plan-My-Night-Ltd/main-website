@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { call, type Overview, type RangeKey } from "@/app/control-center/data";
-import { ccHref } from "@/app/control-center/href";
 import { label, num, pct } from "@/components/control-center/labels";
 import { BarList, DailyChart, Panel, SetupNotice, Stat, StatGrid } from "@/components/control-center/ui";
 
@@ -29,28 +28,28 @@ export async function OverviewTab({ supabase, since, rangeLabel, range }: {
             label="New sign-ups"
             value={num(o.users_new)}
             note={`${num(o.users_total)} accounts in total`}
-            href={ccHref({ tab: "people" })}
+            to={{ tab: "people" }}
           />
-          <Stat label="Searches" value={num(o.searches)} note={`by ${num(o.searchers)} people`} href={ccHref({ tab: "preferences", range })} />
+          <Stat label="Searches" value={num(o.searches)} note={`by ${num(o.searchers)} people`} to={{ tab: "preferences" }} />
           <Stat label="Nights planned" value={num(o.nights_planned)} note="different person and date pairs" />
           <Stat label="Active people" value={num(o.active_users)} note="searched, returned to a plan, clicked or booked" />
           <Stat
             label="Returning people"
             value={num(o.returning_active)}
             note={`${pct(o.returning_active, o.active_users)} of active people came on 2+ days`}
-            href={ccHref({ tab: "people", filter: "returning" })}
+            to={{ tab: "people", filter: "returning" }}
           />
           <Stat
             label="Clicks to venues"
             value={num(o.clicks)}
             note={`${num(o.booking_clicks)} to booking pages`}
-            href={ccHref({ tab: "traffic", range })}
+            to={{ tab: "traffic" }}
           />
           <Stat
             label="Marked as booked"
             value={num(o.bookings)}
             note={`${num(o.covers)} covers, ${num(o.bookers)} people`}
-            href={ccHref({ tab: "bookings", range })}
+            to={{ tab: "bookings" }}
           />
           <Stat label="Upcoming booked nights" value={num(o.upcoming_bookings)} note="venues booked for tonight or later" />
         </StatGrid>

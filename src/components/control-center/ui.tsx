@@ -1,6 +1,6 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { day, num, pct } from "@/components/control-center/labels";
+import { day, num, pct } from "@/components/control-center/fmt";
+import { TabLink, type PeopleFilter, type TabKey } from "@/components/control-center/shell";
 
 // Building blocks for the Control Center. Same black, white and hairlines as the
 // rest of the site; every chart is a single series in white, so the title names it
@@ -25,8 +25,13 @@ export function Panel({ title, note, action, children, className = "" }: {
   );
 }
 
-/** A headline number. `note` is the context under it, e.g. "of 120 signed up". */
-export function Stat({ label, value, note, href }: { label: string; value: ReactNode; note?: ReactNode; href?: string }) {
+/** A headline number. `note` is the context under it, e.g. "of 120 signed up". `to` makes it open another tab. */
+export function Stat({ label, value, note, to }: {
+  label: string;
+  value: ReactNode;
+  note?: ReactNode;
+  to?: { tab: TabKey; filter?: PeopleFilter };
+}) {
   const body = (
     <>
       <p className="text-sm text-ash">{label}</p>
@@ -35,10 +40,10 @@ export function Stat({ label, value, note, href }: { label: string; value: React
     </>
   );
   const cls = "block border border-line bg-raised p-5";
-  return href ? (
-    <Link href={href} className={`${cls} transition-colors hover:border-white/40`}>
+  return to ? (
+    <TabLink tab={to.tab} filter={to.filter} className={`${cls} transition-colors hover:border-white/40`}>
       {body}
-    </Link>
+    </TabLink>
   ) : (
     <div className={cls}>{body}</div>
   );
@@ -172,27 +177,6 @@ export function Tick({ on, yes = "Yes", no = "" }: { on: boolean | null | undefi
     </span>
   ) : (
     <span className="text-ash">{no}</span>
-  );
-}
-
-/** Pill links, e.g. the date range or a filter. The current one is filled. */
-export function Pills({ items, label }: { items: { href: string; label: string; current: boolean }[]; label: string }) {
-  return (
-    <nav aria-label={label} className="flex flex-wrap gap-2">
-      {items.map((i) => (
-        <Link
-          key={i.href}
-          href={i.href}
-          scroll={false}
-          aria-current={i.current ? "true" : undefined}
-          className={`rounded-full border px-4 py-1.5 text-sm transition-colors ${
-            i.current ? "border-white bg-white text-black" : "border-white/25 text-white/85 hover:border-white"
-          }`}
-        >
-          {i.label}
-        </Link>
-      ))}
-    </nav>
   );
 }
 

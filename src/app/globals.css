@@ -86,3 +86,13 @@ summary {
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Control Center: the thin bar that slides across the top while new numbers load. */
+@keyframes cc-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
