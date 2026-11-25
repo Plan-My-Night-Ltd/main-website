@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense, type ReactNode } from "react";
+import { BookedToggle } from "@/components/booked-toggle";
 import { CopyLinkButton } from "@/components/copy-link-button";
 import { EmailOptIn } from "@/components/email-opt-in";
 import { NightLine } from "@/components/night-line";
@@ -10,7 +11,6 @@ import { SavePlan } from "@/components/save-plan";
 import { SignupGate } from "@/components/signup-gate";
 import { hasLiveTables, TableAvailability, TableAvailabilityLoading } from "@/components/table-availability";
 import { button } from "@/components/ui";
-import { VisitedToggle } from "@/components/visited-toggle";
 import { bookingFact, bookingTarget, type BookingRequest } from "@/lib/booking/links";
 import { clock, friendlyTime, londonToday, longDate, priceBandLabel, priceLine } from "@/lib/format";
 import { decodeAnswers, encodeAnswers, stopLabel, type Answers } from "@/lib/plan/answers";
@@ -28,14 +28,22 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// Who is looking at the plan: the signed-in person (if any), and whether we still
-// need to ask them about emails. If the profile can't be read, we don't ask.
-async function planViewer() {
+// Who is looking at the plan: the signed-in person (if any), whether we still need
+// to ask them about emails (not if the profile can't be read), and which venues
+// they've already marked as booked for this night.
+async function planViewer(nightDate: string) {
   const supabase = await serverSupabase();
   const user = supabase ? (await supabase.auth.getUser()).data.user : null;
-  if (!supabase || !user) return { user: null, askAboutEmails: false };
-  const { data } = await supabase.from("profiles").select("marketing_opt_in").eq("id", user.id).maybeSingle();
-  return { user, askAboutEmails: data != null && data.marketing_opt_in === null };
+  if (!supabase || !user) return { user: null, askAboutEmails: false, booked: new Set<string>() };
+  const [{ data: profile }, { data: bookings }] = await Promise.all([
+    supabase.from("profiles").select("marketing_opt_in").eq("id", user.id).maybeSingle(),
+    supabase.from("bookings").select("venue_slug").eq("night_date", nightDate).returns<{ venue_slug: string }[]>(),
+  ]);
+  return {
+    user,
+    askAboutEmails: profile != null && profile.marketing_opt_in === null,
+    booked: new Set((bookings ?? []).map((b) => b.venue_slug)),
+  };
 }
 
 export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
@@ -43,7 +51,7 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
   const answers = decodeAnswers(id);
   if (!answers) notFound();
 
-  const [candidates, viewer] = await Promise.all([planCandidates(answers), planViewer()]);
+  const [candidates, viewer] = await Promise.all([planCandidates(answers), planViewer(answers.date)]);
   const plan = buildPlan(answers, candidates, listAreas(), londonToday());
   const filledStops = plan.stops.filter((s) => s.venue);
   const hasAnyVenue = filledStops.length > 0;
@@ -96,9 +104,14 @@ export default async function PlanResultPage(props: PageProps<"/plan/[id]">) {
               <div className="mt-4 max-w-xl">
                 {s.reason && <p className="font-light text-white/85">{s.reason}</p>}
                 {stopFacts(s.venue!) && <p className="mt-3 text-sm text-ash">{stopFacts(s.venue!)}</p>}
-                <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-4">
+                <div className="mt-5 flex flex-wrap items-center gap-3">
                   <BookingLink venue={s.venue!} request={{ date: answers.date, time: clock(s.arrive), partySize: answers.partySize }} />
-                  <VisitedToggle venueSlug={s.venue!.slug} />
+                  <BookedToggle
+                    booking={{ venueSlug: s.venue!.slug, nightDate: answers.date, stop: s.stop, partySize: answers.partySize, planKey: id }}
+                    initialBooked={viewer.booked.has(s.venue!.slug)}
+                    signedIn={Boolean(viewer.user)}
+                    loginHref={`/login?next=${encodeURIComponent(`/plan/${id}`)}`}
+                  />
                 </div>
                 {hasLiveTables(s) && (
                   <Suspense fallback={<TableAvailabilityLoading />}>

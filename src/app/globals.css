@@ -57,6 +57,19 @@ summary {
   list-style: none;
 }
 
+/* The account menu: a sheet rising from the bottom on phones, a short drop on larger screens. */
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+}
+@keyframes drop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

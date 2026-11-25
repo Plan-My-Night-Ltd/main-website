@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AccountLink } from "@/components/account-link";
+import { AccountMenu } from "@/components/account-menu";
 
 export function SiteHeader() {
   return (
@@ -21,7 +21,7 @@ export function SiteHeader() {
           >
             Plan my night
           </Link>
-          <AccountLink />
+          <AccountMenu />
         </nav>
       </div>
     </header>

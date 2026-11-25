@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { contactEmail as configuredContactEmail } from "@/lib/contact";
 
 export const metadata: Metadata = {
   title: "Privacy policy",
   description: "What PlanMyNights collects about you, why, who we share it with, and your rights.",
 };
 
-// TODO before launch: fill in who runs PlanMyNights and where to reach them.
+// TODO before launch: fill in who runs PlanMyNights. The contact email comes from
+// NEXT_PUBLIC_CONTACT_EMAIL.
 // Google and Apple sign-in both ask for this page's address.
 const operator = "[Company legal name], [registered address]";
-const contactEmail = "[privacy contact email]";
+const contactEmail = configuredContactEmail || "[privacy contact email]";
 const lastUpdated = "23 November 2026";
 
 export default function PrivacyPage() {

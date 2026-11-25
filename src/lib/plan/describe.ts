@@ -1,5 +1,5 @@
 import { regionLabel } from "@/lib/data/areas";
-import { nightShapes, type Answers, type Stop } from "@/lib/plan/answers";
+import { stopLabel, type Answers, type Stop } from "@/lib/plan/answers";
 import type { Region } from "@/lib/types";
 import { getArea } from "@/lib/venues";
 
@@ -10,9 +10,10 @@ export function whereLabel(area: string): string {
   return getArea(area)?.name ?? "London";
 }
 
-/** "Dinner, drinks, then dancing" for the stops chosen. */
+/** "Dinner, drinks and dancing" for the stops chosen. */
 export function shapeLabel(stops: Stop[]): string {
-  return nightShapes.find((n) => n.stops.join() === stops.join())?.hint ?? stops.join(", ");
+  const words = stops.map((s, i) => (i === 0 ? stopLabel[s] : stopLabel[s].toLowerCase()));
+  return words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words[words.length - 1]}` : (words[0] ?? "");
 }
 
 /** Identifies a search regardless of later venue swaps, so swaps update one saved row. */
