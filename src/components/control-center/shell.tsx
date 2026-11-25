@@ -3,23 +3,14 @@
 import { useRouter } from "next/navigation";
 import { createContext, useContext, useOptimistic, useState, useTransition, type MouseEvent, type ReactNode } from "react";
 import { ccHref } from "@/app/control-center/href";
+import { tabs, type PeopleFilter, type TabKey } from "@/components/control-center/tabs";
+
+export type { PeopleFilter, TabKey };
 
 // The Control Center's frame, run in the browser so it responds the moment you click.
 // Every tab's data arrives with the page, so switching tabs never waits on the server;
 // only the date range and Refresh fetch new numbers, and the page shows that it's
 // updating while they do.
-
-export const tabs = [
-  { key: "overview", label: "Overview", ranged: true },
-  { key: "people", label: "People", ranged: false },
-  { key: "preferences", label: "Preferences", ranged: true },
-  { key: "traffic", label: "Traffic", ranged: true },
-  { key: "bookings", label: "Bookings", ranged: true },
-  { key: "venues", label: "Venues", ranged: false },
-] as const;
-
-export type TabKey = (typeof tabs)[number]["key"];
-export type PeopleFilter = "all" | "returning" | "booked" | "emails" | "inactive";
 
 type Ctx = {
   tab: TabKey;

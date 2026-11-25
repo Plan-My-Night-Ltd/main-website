@@ -7,7 +7,8 @@ import { PeopleTab } from "@/app/control-center/tabs/people";
 import { PreferencesTab } from "@/app/control-center/tabs/preferences";
 import { TrafficTab } from "@/app/control-center/tabs/traffic";
 import { VenuesTab } from "@/app/control-center/tabs/venues";
-import { ControlCenterShell, tabs, type TabKey } from "@/components/control-center/shell";
+import { ControlCenterShell } from "@/components/control-center/shell";
+import { tabs, type TabKey } from "@/components/control-center/tabs";
 import { TabSkeleton } from "@/components/control-center/skeleton";
 
 export const metadata: Metadata = {
